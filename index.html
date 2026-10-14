@@ -3236,6 +3236,7 @@ Correo Avisos: abreya.chile@gmail.com`;
         '<span class="amount">'+formatCLP(s.amount)+'</span>' +
         (expensesTotal(s)>0 ? '<span class="card-exp">Gastos '+formatCLP(expensesTotal(s))+'</span>' : '') +
         (s.invoiced ? '<span class="card-exp">🧾 Factura '+escapeHtml(s.invoiceNumber||'emitida')+'</span>' : '') +
+        (Number(s.cashAmount)>0 ? '<span class="card-exp">💵 Efectivo '+formatCLP(s.cashAmount)+'</span>' : '') +
         '<span class="status-pill '+(s.paymentStatus==='pagado'?'pagado':'pendiente')+'">'+(s.paymentStatus==='pagado'?'Pagado':'Pendiente')+'</span>' +
         '<div class="wa-row">'+waTechButton(s,'wa-btn')+waClientButton(s,'wa-btn')+'</div>' +
       '</div>' +
@@ -4216,56 +4217,97 @@ Correo Avisos: abreya.chile@gmail.com`;
   }
   document.getElementById('btn-new').onclick = function(){ openAppointmentForm(null); };
 
-  /* ---------------- payment split: cash vs transfer (per service) ---------------- */
-  // El efectivo lo recibe el técnico: se registra aquí y se descuenta de su pago en la pestaña Pagos.
+  /* ---------------- cash received by the technician (per service) ---------------- */
+  // Montos en pesos de efectivo que recibió el técnico (puede haber varios). Se suman, se restan
+  // del total del trabajo y se descuentan de la comisión del técnico en la pestaña Pagos.
   function setupPayment(id, s){
     var box = document.getElementById('m-payment');
     var amount = Number(s.amount)||0;
-    var cash = Math.min(Math.max(0, Number(s.cashAmount)||0), amount);
+    var rows = Array.isArray(s.cashPayments)
+      ? s.cashPayments.map(function(c){ return { id: c.id || newExpId(), amount: Number(c.amount)||0, note: c.note || '' }; })
+      : (Number(s.cashAmount) > 0 ? [{ id: newExpId(), amount: Number(s.cashAmount), note: '' }] : []);
     var timer = null, dirty = false;
 
+    function total(){ return rows.reduce(function(a,c){ return a + Math.max(0, Number(c.amount)||0); }, 0); }
+    function payload(){
+      return rows.filter(function(c){ return (Number(c.amount)||0) > 0 || c.note.trim(); })
+        .map(function(c){ return { id: c.id, amount: Math.max(0, Number(c.amount)||0), note: c.note.trim() }; });
+    }
     async function save(){
       clearTimeout(timer); timer = null;
       if(!dirty) return;
       dirty = false;
       if(!state.db || !state.services.has(id)) return;
       try{
-        await state.db.collection('services').doc(id).update({ cashAmount: cash });
+        await state.db.collection('services').doc(id).update({ cashPayments: payload(), cashAmount: total() });
       }catch(err){
         console.error(err);
         dirty = true;
-        alert('No se pudo guardar la forma de pago. Revisa tu conexión e intenta de nuevo.');
+        alert('No se pudo guardar el efectivo recibido. Revisa tu conexión e intenta de nuevo.');
       }
     }
+    function scheduleSave(){ dirty = true; clearTimeout(timer); timer = setTimeout(save, 400); }
     modalCloseHooks.push(save);
 
-    function pctOf(c){ return amount > 0 ? Math.round(c / amount * 10000) / 100 : ''; }
-    box.innerHTML = '<div class="inv-box">' +
-      '<div class="inv-head">Forma de pago del cliente</div>' +
-      '<div class="exp-cols">' +
-        '<label>% en efectivo<input type="number" class="inv-num" id="pay-pct" min="0" max="100" step="any" value="'+pctOf(cash)+'"></label>' +
-        '<label>Efectivo (CLP)<input type="number" class="inv-num" id="pay-cash" min="0" step="1" value="'+cash+'"></label>' +
-        '<div class="exp-sub">Transferencia<b class="mono" id="pay-transfer"></b></div>' +
-      '</div>' +
-      '<div class="fin-note" style="font-size:12px; color:var(--ink-faint); line-height:1.5;">El efectivo lo recibe el técnico y se descuenta de su pago en la pestaña Pagos.</div>' +
-    '</div>';
-    var pctEl = document.getElementById('pay-pct'), cashEl = document.getElementById('pay-cash');
-    function paint(){ document.getElementById('pay-transfer').textContent = formatCLP(amount - cash); }
+    function refreshTotals(){
+      var t = total(), rest = amount - t;
+      document.getElementById('cash-total').textContent = formatCLP(t);
+      var r = document.getElementById('cash-rest');
+      r.textContent = formatNet(rest);
+      r.className = 'mono ' + (rest < 0 ? 'neg' : 'pos');
+      document.getElementById('cash-warn').hidden = rest >= 0;
+    }
+    function rowHtml(c, i){
+      return '<div class="exp-item" data-i="'+i+'">' +
+        '<div class="exp-item-top"><span>Efectivo '+(i+1)+'</span><button type="button" class="exp-x" title="Quitar">✕ quitar</button></div>' +
+        '<div class="exp-cols" style="grid-template-columns:1fr 1.4fr;">' +
+          '<label>Monto recibido (CLP)<input type="number" class="c-amt" min="0" step="1" value="'+(c.amount||'')+'" placeholder="0"></label>' +
+          '<label>Nota (opcional)<input type="text" class="c-note" placeholder="Ej: anticipo, vuelto" value="'+escapeHtml(c.note)+'"></label>' +
+        '</div>' +
+      '</div>';
+    }
+    function paint(focusLast){
+      box.innerHTML = '<div class="inv-box">' +
+        '<div class="inv-head">Efectivo recibido por el técnico</div>' +
+        (rows.length ? rows.map(rowHtml).join('') : '<div class="exp-empty">Sin efectivo registrado. Si el técnico recibió dinero en efectivo, agrégalo abajo.</div>') +
+        '<button type="button" class="exp-addbtn" id="cash-add">+ Agregar efectivo recibido</button>' +
+        '<div class="exp-net"><span>Total del trabajo</span><span class="mono">'+formatCLP(amount)+'</span></div>' +
+        '<div class="exp-net"><span>Efectivo recibido (suma)</span><span class="mono" id="cash-total"></span></div>' +
+        '<div class="exp-net"><span>Resto del trabajo (total − efectivo)</span><span id="cash-rest"></span></div>' +
+        '<div class="exp-empty" id="cash-warn" style="color:var(--danger);" hidden>El efectivo registrado supera el total del trabajo.</div>' +
+        '<div class="fin-note" style="font-size:12px; color:var(--ink-faint); line-height:1.5;">El efectivo se descuenta de la comisión del técnico en la pestaña Pagos.</div>' +
+      '</div>';
+      box.querySelectorAll('.exp-item').forEach(function(row){
+        var i = Number(row.getAttribute('data-i'));
+        var amt = row.querySelector('.c-amt'), note = row.querySelector('.c-note');
+        function onInput(){
+          rows[i].amount = Number(amt.value) || 0;
+          rows[i].note = note.value;
+          refreshTotals();
+          scheduleSave();
+        }
+        [amt, note].forEach(function(el){
+          el.addEventListener('input', onInput);
+          el.addEventListener('change', function(){ save(); });
+        });
+        row.querySelector('.exp-x').onclick = function(){
+          rows.splice(i, 1);
+          dirty = true;
+          paint();
+          save();
+        };
+      });
+      document.getElementById('cash-add').onclick = function(){
+        rows.push({ id: newExpId(), amount: 0, note: '' });
+        paint(true);
+      };
+      refreshTotals();
+      if(focusLast){
+        var inputs = box.querySelectorAll('.c-amt');
+        if(inputs.length) inputs[inputs.length-1].focus();
+      }
+    }
     paint();
-    function changed(){ dirty = true; paint(); clearTimeout(timer); timer = setTimeout(save, 400); }
-    pctEl.addEventListener('input', function(){
-      var pct = Math.min(100, Math.max(0, Number(pctEl.value)||0));
-      cash = Math.round(amount * pct / 100);
-      cashEl.value = cash;
-      changed();
-    });
-    cashEl.addEventListener('input', function(){
-      cash = Math.min(amount, Math.max(0, Math.round(Number(cashEl.value)||0)));
-      if(Number(cashEl.value) > amount) cashEl.value = cash;
-      pctEl.value = pctOf(cash);
-      changed();
-    });
-    [pctEl, cashEl].forEach(function(el){ el.addEventListener('change', save); });
   }
 
   /* ---------------- invoice (per service) ---------------- */
