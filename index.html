@@ -891,6 +891,24 @@
   #agendaRoot .fin-section h3{ margin:0; font-size:16px; font-family:var(--font-display); }
   #agendaRoot .fin-section h4{ margin:6px 0 0; font-size:13px; color:var(--ink-soft); }
   #agendaRoot .fin-note{ font-size:12px; color:var(--ink-faint); line-height:1.5; }
+  #agendaRoot .exp-meta select{ border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:var(--radius-sm); padding:7px 8px; font:inherit; font-size:12.5px; }
+  #agendaRoot #fin-results > .fin-section:first-child{ margin-top:0; padding-top:0; border-top:0; }
+  #agendaRoot .cmp-box{ border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:var(--radius-md); padding:14px 16px; background:var(--surface-2); display:flex; flex-direction:column; gap:8px; }
+  #agendaRoot .cmp-box.up{ border-left-color:var(--green); }
+  #agendaRoot .cmp-box.down{ border-left-color:var(--danger); }
+  #agendaRoot .cmp-box .main{ font-size:15px; font-weight:600; line-height:1.5; }
+  #agendaRoot .cmp-box ul{ margin:0; padding-left:18px; font-size:13px; color:var(--ink-soft); line-height:1.7; }
+  #agendaRoot .cmp-warn{ font-size:12.5px; color:var(--amber-ink); background:var(--amber-soft); border-radius:var(--radius-sm); padding:8px 10px; }
+  #agendaRoot .cmp-good{ color:var(--green-ink); font-weight:600; }
+  #agendaRoot .cmp-bad{ color:var(--danger); font-weight:600; }
+  #agendaRoot .cat-bar.b .bar i{ background:var(--amber); }
+  #agendaRoot .res-table td:last-child{ text-align:right; white-space:nowrap; }
+  #agendaRoot .res-sub td{ border-top:2px solid var(--border); font-weight:700; }
+  #agendaRoot .res-total td{ border-top:2px solid var(--ink); font-weight:700; font-size:15px; }
+  #agendaRoot .cat-bars{ display:flex; flex-direction:column; gap:8px; }
+  #agendaRoot .cat-bar{ display:grid; grid-template-columns:160px 1fr auto; gap:10px; align-items:center; font-size:13px; }
+  #agendaRoot .cat-bar .bar{ height:8px; border-radius:99px; background:var(--accent-soft); overflow:hidden; }
+  #agendaRoot .cat-bar .bar i{ display:block; height:100%; background:var(--accent); border-radius:99px; }
   #agendaRoot .fin-row{ cursor:pointer; }
   #agendaRoot .fin-row:hover td{ background:var(--accent-soft); }
   #agendaRoot .fin-exp{ font-size:11.5px; color:var(--ink-faint); margin-top:2px; }
@@ -1228,6 +1246,7 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
       <p style="font-size:11.5px; color:var(--steel-500); line-height:1.6; margin:0 0 12px;">
         Calcula el costo de un vidrio según sus medidas y agrégalo directo como ítem de la cotización.
       </p>
+      <div class="field"><label>Nombre del ítem (opcional)</label><input id="calcName" type="text" maxlength="80" placeholder="Ej: Ventana del living, Puerta de baño"></div>
       <div class="field"><label>Tipo de vidrio</label><select id="calcGlassType" class="select-field" onchange="calcGlass()"></select></div>
       <div class="row2">
         <div class="field"><label>Ancho (mm)</label><input id="calcW" type="number" min="0" step="1" placeholder="0" oninput="calcGlass()"></div>
@@ -1270,8 +1289,10 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
       <div class="side-summary-row"><span>Servicios agendados</span><span class="v" id="sum-count">–</span></div>
       <div class="side-summary-row"><span>Por cobrar</span><span class="v amber" id="sum-pending">–</span></div>
       <div class="side-summary-row"><span>Cobrado</span><span class="v green" id="sum-paid">–</span></div>
-      <div class="side-summary-row"><span>Gastos</span><span class="v red" id="sum-expenses">–</span></div>
-      <div class="side-summary-row"><span>Queda (monto − gastos)</span><span class="v" id="sum-net">–</span></div>
+      <div class="side-summary-row"><span>Gastos y compras</span><span class="v red" id="sum-expenses">–</span></div>
+      <div class="side-summary-row"><span>Queda del mes (est.)</span><span class="v" id="sum-net">–</span></div>
+      <div class="side-summary-row"><span>Vendido líquido (sin IVA)</span><span class="v" id="sum-sold">–</span></div>
+      <div class="side-summary-row"><span>Ganancia líquida</span><span class="v" id="sum-profit">–</span></div>
       <div class="side-summary-row"><span>IVA ventas</span><span class="v" id="sum-iva-v">–</span></div>
       <div class="side-summary-row"><span>IVA compras</span><span class="v" id="sum-iva-c">–</span></div>
       <div class="side-summary-row"><span>IVA a pagar</span><span class="v amber" id="sum-iva">–</span></div>
@@ -1290,7 +1311,9 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
       <button class="tab" data-tab="clientes" id="tab-clientes">Clientes <span class="count" id="clients-count"></span></button>
       <button class="tab" data-tab="tecnicos" id="tab-tecnicos">Técnicos <span class="count" id="techs-count"></span></button>
       <button class="tab" data-tab="pagos" id="tab-pagos">Pagos</button>
+      <button class="tab" data-tab="compras" id="tab-compras">Compras</button>
       <button class="tab" data-tab="finanzas" id="tab-finanzas">Finanzas</button>
+      <button class="tab" data-tab="comparar" id="tab-comparar">Comparar</button>
     </nav>
 
     <section id="view-agenda">
@@ -1366,6 +1389,7 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
     <section id="view-pagos" hidden>
       <div class="pagos-wrap">
         <div class="pagos-filters">
+          <button class="btn btn-primary btn-sm btn-block" id="btn-new-advance">+ Registrar adelanto a un técnico</button>
           <div class="field"><label>Técnico</label><select id="pay-tech"><option value="">Todos los técnicos</option></select></div>
           <div class="field"><label>Desde</label><input type="date" id="pay-from"></div>
           <div class="field"><label>Hasta</label><input type="date" id="pay-to"></div>
@@ -1373,6 +1397,17 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
           <label class="pay-check"><input type="checkbox" id="pay-only-paid"> Solo servicios cobrados</label>
         </div>
         <div class="pagos-results" id="pagos-results"></div>
+      </div>
+    </section>
+
+    <section id="view-compras" hidden>
+      <div class="pagos-wrap">
+        <div class="pagos-filters">
+          <button class="btn btn-primary btn-sm btn-block" id="btn-new-purchase">+ Nueva compra o gasto</button>
+          <div class="field"><label>Mes</label><input type="month" id="buy-month"></div>
+          <div class="field"><label>Categoría</label><select id="buy-cat"><option value="">Todas las categorías</option></select></div>
+        </div>
+        <div class="pagos-results" id="buy-results"></div>
       </div>
     </section>
 
@@ -1390,6 +1425,18 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
           </select></div>
         </div>
         <div class="pagos-results" id="fin-results"></div>
+      </div>
+    </section>
+
+    <section id="view-comparar" hidden>
+      <div class="pagos-wrap">
+        <div class="pagos-filters">
+          <div class="field"><label>Mes a analizar</label><input type="month" id="cmp-a"></div>
+          <div class="field"><label>Comparar con</label><input type="month" id="cmp-b"></div>
+          <button class="btn btn-ghost btn-sm btn-block" id="cmp-prev">↩ Mes anterior</button>
+          <button class="btn btn-ghost btn-sm btn-block" id="cmp-year">↩ Mismo mes del año pasado</button>
+        </div>
+        <div class="pagos-results" id="cmp-results"></div>
       </div>
     </section>
   </main>
@@ -1840,7 +1887,11 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
     if(wMM <= 0 || hMM <= 0){ alert('Ingresa el ancho y el alto del vidrio.'); return; }
     const areaM2 = (wMM/1000) * (hMM/1000);
     const unitPrice = Math.round(areaM2 * (g.pricePerM2 || 0));
-    const desc = `${g.name} ${wMM}x${hMM}mm (${areaM2.toFixed(2)} m²)`;
+    // Descripción del ítem: nombre + tipo de vidrio + medidas exactas tal como se ingresaron.
+    const fmtMeasure = n => String(n).replace('.', ',');
+    const areaTxt = areaM2.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+    const itemName = document.getElementById('calcName').value.trim();
+    const desc = (itemName ? itemName + ' — ' : '') + g.name + ' ' + fmtMeasure(wMM) + ' × ' + fmtMeasure(hMM) + ' mm (' + areaTxt + ' m²)';
     if(items.length === 1 && !items[0].desc && !items[0].price){
       items[0] = { desc, qty, price: unitPrice };
     } else {
@@ -1848,6 +1899,7 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
     }
     renderEdit();
     update();
+    document.getElementById('calcName').value = '';
     document.getElementById('calcW').value = '';
     document.getElementById('calcH').value = '';
     document.getElementById('calcQty').value = '1';
@@ -2789,6 +2841,8 @@ Correo Avisos: abreya.chile@gmail.com`;
     services: new Map(),   // id -> data
     clients: new Map(),    // id (phone) -> data
     technicians: new Map(),// id -> data
+    purchases: new Map(),  // id -> compra o gasto general
+    advances: new Map(),   // id -> adelanto a un técnico
     selectedDate: isoFromDate(new Date()),
     calYear: new Date().getFullYear(),
     calMonth: new Date().getMonth(),
@@ -2876,6 +2930,26 @@ Correo Avisos: abreya.chile@gmail.com`;
       console.error('technicians snapshot error', err);
       showBanner('No se pudo sincronizar los técnicos (' + err.code + '). Revisa las reglas de Firestore.');
     }));
+
+    unsubs.push(db.collection('purchases').orderBy('date').onSnapshot(function(snap){
+      var m = new Map();
+      snap.docs.forEach(function(d){ m.set(d.id, d.data()); });
+      state.purchases = m;
+      renderAll();
+    }, function(err){
+      console.error('purchases snapshot error', err);
+      showBanner('No se pudo sincronizar las compras (' + err.code + '). Revisa las reglas de Firestore.');
+    }));
+
+    unsubs.push(db.collection('advances').orderBy('date').onSnapshot(function(snap){
+      var m = new Map();
+      snap.docs.forEach(function(d){ m.set(d.id, d.data()); });
+      state.advances = m;
+      renderAll();
+    }, function(err){
+      console.error('advances snapshot error', err);
+      showBanner('No se pudo sincronizar los adelantos (' + err.code + '). Revisa las reglas de Firestore.');
+    }));
   }
 
 
@@ -2955,6 +3029,10 @@ Correo Avisos: abreya.chile@gmail.com`;
   function expensesTotal(v){
     return (Array.isArray(v.expenses) ? v.expenses : []).reduce(function(a,e){ return a + expParts(e).gross; }, 0);
   }
+  // Gastos de un servicio que pagó el técnico de su bolsillo (se le reembolsan en Pagos)
+  function expensesPaidByTech(v){
+    return (Array.isArray(v.expenses) ? v.expenses : []).reduce(function(a,e){ return a + (e.paidBy === 'tecnico' ? expParts(e).gross : 0); }, 0);
+  }
   function ymOf(iso){ return (iso||'').slice(0,7); }
 
   // Ventas con factura cuyo mes es el de la FECHA DE FACTURA (si falta, la del servicio)
@@ -2968,6 +3046,12 @@ Correo Avisos: abreya.chile@gmail.com`;
     return out;
   }
   // Compras/gastos cuyo mes es el de la FECHA DE COMPRA (si falta, la del servicio)
+  // Compras y gastos de un mes (por FECHA DE COMPRA): los gastos de cada servicio + las compras generales.
+  function purchaseParts(p){
+    var net = Number(p.net)||0;
+    var iva = p.iva === true ? Math.round(net * IVA_PCT / 100) : 0;
+    return { net: net, iva: iva, gross: net + iva };
+  }
   function purchasesInMonth(prefix){
     var out = [];
     state.services.forEach(function(v,id){
@@ -2975,11 +3059,96 @@ Correo Avisos: abreya.chile@gmail.com`;
         var when = e.date || v.date;
         if(ymOf(when) !== prefix) return;
         var p = expParts(e);
-        out.push({ id:id, s:v, e:e, when:when, net:p.net, iva:p.iva, gross:p.gross });
+        out.push({
+          kind:'service', refId:id, attr:'data-id="'+id+'"', when:when, net:p.net, iva:p.iva, gross:p.gross,
+          labelHtml: escapeHtml(v.clientName||'') + (v.trackingCode ? ' <span class="mono" style="color:var(--ink-faint)">'+escapeHtml(v.trackingCode)+'</span>' : ''),
+          labelText: v.clientName||'', trackingText: v.trackingCode||'',
+          descHtml: escapeHtml(e.desc||'') + (e.qty>1 ? ' <span class="fin-exp">('+e.qty+' × '+formatCLP(e.price)+')</span>' : '') + (e.iva===true ? '' : ' <span class="fin-exp">sin IVA</span>') + (e.paidBy==='tecnico' ? ' <span class="fin-exp">pagó el técnico</span>' : ''),
+          descText: e.desc||''
+        });
+      });
+    });
+    state.purchases.forEach(function(pu,id){
+      if(ymOf(pu.date) !== prefix) return;
+      var p = purchaseParts(pu);
+      out.push({
+        kind:'general', refId:id, attr:'data-purchase="'+id+'"', when:pu.date, net:p.net, iva:p.iva, gross:p.gross,
+        labelHtml: 'General' + (pu.category ? ' · ' + escapeHtml(pu.category) : ''),
+        labelText: 'General' + (pu.category ? ' · ' + pu.category : ''), trackingText: '',
+        descHtml: escapeHtml(pu.desc||'') + (pu.supplier ? ' <span class="fin-exp">'+escapeHtml(pu.supplier)+'</span>' : '') +
+          (pu.docNumber ? ' <span class="fin-exp">N° '+escapeHtml(pu.docNumber)+'</span>' : '') + (pu.iva===true ? '' : ' <span class="fin-exp">sin IVA</span>'),
+        descText: pu.desc||''
       });
     });
     out.sort(function(a,b){ return a.when.localeCompare(b.when); });
     return out;
+  }
+
+  // Neto vendido de un servicio: sin IVA si tiene factura; si no, el monto tal cual.
+  function serviceNet(v){
+    var iv = ivaOf(v);
+    return iv ? iv.net : (Number(v.amount)||0);
+  }
+
+  // Resultado del mes (servicios por fecha del servicio, compras por fecha de compra).
+  //  - Caja: ingresos - gastos y compras (con IVA) - comisiones - IVA a pagar.
+  //  - Ganancia líquida: vendido líquido (sin IVA) - compras y gastos netos - comisiones.
+  function monthResult(prefix){
+    var pctByTech = {};
+    state.technicians.forEach(function(t){ if(t.name) pctByTech[t.name] = Number(t.commissionPct)||0; });
+    var income = 0, paid = 0, pending = 0, commission = 0, soldNet = 0;
+    state.services.forEach(function(v){
+      if(ymOf(v.date) !== prefix) return;
+      var iv = ivaOf(v), total = iv ? iv.total : (Number(v.amount)||0);
+      income += total;
+      soldNet += serviceNet(v);
+      if(v.paymentStatus === 'pagado') paid += total; else pending += total;
+      var pct = pctByTech[v.technician] || 0;
+      if(pct) commission += Math.round(Math.max(0, (Number(v.amount)||0) - expensesTotal(v)) * pct / 100);
+    });
+    var purch = purchasesInMonth(prefix);
+    var svcSpent = 0, genSpent = 0;
+    purch.forEach(function(r){ if(r.kind === 'service') svcSpent += r.gross; else genSpent += r.gross; });
+    var purchNet = sumBy(purch, 'net');
+    var ivaV = sumBy(salesInMonth(prefix), 'iva'), ivaC = sumBy(purch, 'iva');
+    var due = ivaV - ivaC, ivaPay = Math.max(0, due);
+    var before = income - svcSpent - genSpent - commission;
+    return { income:income, paid:paid, pending:pending, svcSpent:svcSpent, genSpent:genSpent, commission:commission,
+             ivaV:ivaV, ivaC:ivaC, due:due, ivaPay:ivaPay, before:before, after:before - ivaPay,
+             soldNet:soldNet, purchNet:purchNet, profit: soldNet - purchNet - commission };
+  }
+  function resultBlockHtml(prefix){
+    var r = monthResult(prefix);
+    var neg = function(v){ return v < 0 ? 'neg' : 'pos'; };
+    return '<div class="fin-section">' +
+      '<h3>Resultado de '+monthLabel(prefix)+'</h3>' +
+      '<div class="pay-stat-grid">' +
+        '<div class="pay-stat"><div class="l">Vendido (con IVA)</div><div class="v">'+formatCLP(r.income)+'</div></div>' +
+        '<div class="pay-stat"><div class="l">Vendido líquido (sin IVA)</div><div class="v">'+formatCLP(r.soldNet)+'</div></div>' +
+        '<div class="pay-stat"><div class="l">Comisiones de técnicos</div><div class="v">'+formatCLP(r.commission)+'</div></div>' +
+        '<div class="pay-stat"><div class="l">Ganancia líquida</div><div class="v '+neg(r.profit)+'">'+formatNet(r.profit)+'</div></div>' +
+      '</div>' +
+      '<h4>Ganancia líquida (sin IVA)</h4>' +
+      '<div class="pay-table-wrap"><table class="pay-table res-table"><tbody>' +
+        '<tr><td>Vendido líquido <span class="fin-exp">neto de los servicios del mes, sin IVA</span></td><td class="mono">'+formatCLP(r.soldNet)+'</td></tr>' +
+        '<tr><td>− Compras y gastos <span class="fin-exp">netos, de servicios y generales</span></td><td class="mono">'+formatCLP(r.purchNet)+'</td></tr>' +
+        '<tr><td>− Comisiones de técnicos <span class="fin-exp">calculadas sobre monto − gastos</span></td><td class="mono">'+formatCLP(r.commission)+'</td></tr>' +
+        '<tr class="res-total"><td>Ganancia líquida</td><td class="mono" style="color:'+(r.profit<0?'var(--danger)':'var(--green-ink)')+'">'+formatNet(r.profit)+'</td></tr>' +
+      '</tbody></table></div>' +
+      '<h4>Caja (lo que queda en mano)</h4>' +
+      '<div class="pay-table-wrap"><table class="pay-table res-table"><tbody>' +
+        '<tr><td>Ingresos de los servicios del mes <span class="fin-exp">cobrado '+formatCLP(r.paid)+' · por cobrar '+formatCLP(r.pending)+'</span></td><td class="mono">'+formatCLP(r.income)+'</td></tr>' +
+        '<tr><td>− Gastos de los servicios (materiales, etc.)</td><td class="mono">'+formatCLP(r.svcSpent)+'</td></tr>' +
+        '<tr><td>− Compras y gastos generales</td><td class="mono">'+formatCLP(r.genSpent)+'</td></tr>' +
+        '<tr><td>− Comisiones de técnicos</td><td class="mono">'+formatCLP(r.commission)+'</td></tr>' +
+        '<tr class="res-sub"><td>Queda antes de IVA</td><td class="mono">'+formatNet(r.before)+'</td></tr>' +
+        '<tr><td>− IVA a pagar del mes <span class="fin-exp">IVA ventas '+formatCLP(r.ivaV)+' − IVA compras '+formatCLP(r.ivaC)+'</span></td><td class="mono">'+formatCLP(r.ivaPay)+'</td></tr>' +
+        '<tr class="res-total"><td>Queda después de IVA</td><td class="mono" style="color:'+(r.after<0?'var(--danger)':'var(--green-ink)')+'">'+formatNet(r.after)+'</td></tr>' +
+      '</tbody></table></div>' +
+      '<div class="fin-note">El IVA no es ganancia: la ganancia líquida lo excluye de ventas y compras. Los adelantos a técnicos no cambian el resultado porque son parte de su comisión. ' +
+        'Los ingresos se toman por la fecha del servicio, las compras por su fecha de compra y el IVA por las fechas de factura y de compra.' +
+        (r.due < 0 ? ' Este mes el IVA de compras supera al de ventas: queda un remanente a favor de '+formatCLP(-r.due)+' que no se suma a la caja.' : '') + '</div>' +
+    '</div>';
   }
   function sumBy(list, key){ return list.reduce(function(a,x){ return a + (x[key]||0); }, 0); }
   function fmtShortDate(iso){
@@ -3184,8 +3353,14 @@ Correo Avisos: abreya.chile@gmail.com`;
       else pending += Number(v.amount)||0;
       spent += expensesTotal(v);
     });
-    var net = paid + pending - spent;
-    var ivaV = sumBy(salesInMonth(prefix), 'iva'), ivaC = sumBy(purchasesInMonth(prefix), 'iva');
+    var res = monthResult(prefix);
+    document.getElementById('sum-sold').textContent = formatCLP(res.soldNet);
+    var profitEl = document.getElementById('sum-profit');
+    profitEl.textContent = formatNet(res.profit);
+    profitEl.className = 'v ' + (res.profit < 0 ? 'neg' : 'green');
+    spent = res.svcSpent + res.genSpent;
+    var net = res.after;
+    var ivaV = res.ivaV, ivaC = res.ivaC;
     document.getElementById('sum-iva-v').textContent = formatCLP(ivaV);
     document.getElementById('sum-iva-c').textContent = formatCLP(ivaC);
     var dueEl = document.getElementById('sum-iva');
@@ -3581,14 +3756,15 @@ Correo Avisos: abreya.chile@gmail.com`;
           // en la misma operación (atómica) para que el técnico y su historial nunca queden desfasados.
           var affected = [];
           if(existing.name && existing.name !== name){
-            state.services.forEach(function(v, sid){ if(v.technician === existing.name) affected.push(sid); });
+            state.services.forEach(function(v, sid){ if(v.technician === existing.name) affected.push(['services', sid]); });
+            state.advances.forEach(function(v, aid){ if(v.technician === existing.name) affected.push(['advances', aid]); });
           }
           var first = true;
           do{
             var batch = state.db.firestore.batch();
             if(first) batch.update(state.db.collection('technicians').doc(existing.id), payload);
             first = false;
-            affected.splice(0, 400).forEach(function(sid){ batch.update(state.db.collection('services').doc(sid), { technician: name }); });
+            affected.splice(0, 400).forEach(function(x){ batch.update(state.db.collection(x[0]).doc(x[1]), { technician: name }); });
             await batch.commit();
           } while(affected.length);
         } else {
@@ -3679,7 +3855,7 @@ Correo Avisos: abreya.chile@gmail.com`;
     var prefix = monthEl.value;
     var f = document.getElementById('fin-filter').value;
     var box = document.getElementById('fin-results');
-    var html = '';
+    var html = resultBlockHtml(prefix);
 
     /* ---- A) Servicios del mes (por fecha del servicio) ---- */
     var items = [];
@@ -3687,12 +3863,13 @@ Correo Avisos: abreya.chile@gmail.com`;
       if((v.date||'').slice(0,7)===prefix && statusMatches(v,f)) items.push(Object.assign({id:id}, v));
     });
     items.sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); });
-    var billed=0, spent=0, paid=0, pending=0, uninvoicedAmt=0;
+    var billed=0, spent=0, paid=0, pending=0, uninvoicedAmt=0, soldNet=0;
     items.forEach(function(s){
       var a = Number(s.amount)||0;
       billed += a; spent += expensesTotal(s);
       if(s.paymentStatus==='pagado') paid += a; else pending += a;
       if(!s.invoiced) uninvoicedAmt += a;
+      soldNet += serviceNet(s);
     });
     var net = billed - spent;
 
@@ -3703,6 +3880,7 @@ Correo Avisos: abreya.chile@gmail.com`;
       html +=
       '<div class="pay-stat-grid">' +
         '<div class="pay-stat"><div class="l">Facturado</div><div class="v">'+formatCLP(billed)+'</div></div>' +
+        '<div class="pay-stat"><div class="l">Vendido líquido (sin IVA)</div><div class="v">'+formatCLP(soldNet)+'</div></div>' +
         '<div class="pay-stat"><div class="l">Gastos pagados</div><div class="v">'+formatCLP(spent)+'</div></div>' +
         '<div class="pay-stat"><div class="l">Queda (monto − gastos)</div><div class="v '+(net<0?'neg':'pos')+'">'+formatNet(net)+'</div></div>' +
         '<div class="pay-stat"><div class="l">Cobrado</div><div class="v">'+formatCLP(paid)+'</div></div>' +
@@ -3756,11 +3934,9 @@ Correo Avisos: abreya.chile@gmail.com`;
         : '<div class="fin-note">No hay facturas emitidas en este mes.</div>') +
 
       '<h4>Compras y gastos del mes (IVA crédito)</h4>' +
-      (purch.length ? '<div class="pay-table-wrap"><table class="pay-table"><thead><tr><th>Fecha compra</th><th>Servicio</th><th>Detalle</th><th>Neto</th><th>IVA</th><th>Total pagado</th></tr></thead><tbody>' +
+      (purch.length ? '<div class="pay-table-wrap"><table class="pay-table"><thead><tr><th>Fecha compra</th><th>Origen</th><th>Detalle</th><th>Neto</th><th>IVA</th><th>Total pagado</th></tr></thead><tbody>' +
         purch.map(function(r){
-          return '<tr class="fin-row" data-id="'+r.id+'"><td>'+fmtShortDate(r.when)+'</td>' +
-            '<td>'+escapeHtml(r.s.clientName||'')+(r.s.trackingCode?' <span class="mono" style="color:var(--ink-faint)">'+escapeHtml(r.s.trackingCode)+'</span>':'')+'</td>' +
-            '<td>'+escapeHtml(r.e.desc||'')+(r.e.qty>1?' <span class="fin-exp">('+r.e.qty+' × '+formatCLP(r.e.price)+')</span>':'')+(r.e.iva===true?'':' <span class="fin-exp">sin IVA</span>')+'</td>' +
+          return '<tr class="fin-row" '+r.attr+'><td>'+fmtShortDate(r.when)+'</td><td>'+r.labelHtml+'</td><td>'+r.descHtml+'</td>' +
             '<td class="mono">'+formatCLP(r.net)+'</td><td class="mono">'+formatCLP(r.iva)+'</td><td class="mono">'+formatCLP(r.gross)+'</td></tr>';
         }).join('') +
         '</tbody><tfoot><tr><td></td><td></td><td><b>Total compras</b></td><td class="mono"><b>'+formatCLP(netC)+'</b></td><td class="mono"><b>'+formatCLP(ivaC)+'</b></td><td class="mono"><b>'+formatCLP(totC)+'</b></td></tr></tfoot></table></div>'
@@ -3772,7 +3948,11 @@ Correo Avisos: abreya.chile@gmail.com`;
 
     box.innerHTML = html;
     box.querySelectorAll('.fin-row').forEach(function(tr){
-      tr.addEventListener('click', function(){ openDetail(tr.getAttribute('data-id')); });
+      tr.addEventListener('click', function(){
+        var pid = tr.getAttribute('data-purchase');
+        if(pid){ if(state.purchases.has(pid)) openPurchaseForm(Object.assign({ id: pid }, state.purchases.get(pid))); }
+        else openDetail(tr.getAttribute('data-id'));
+      });
     });
 
     var csvServ = document.getElementById('btn-export-fin');
@@ -3794,7 +3974,7 @@ Correo Avisos: abreya.chile@gmail.com`;
       sales.forEach(function(r){ rows.push([r.when, r.s.invoiceNumber||'', r.s.clientName||'', r.s.description||'', r.net, r.iva, r.total]); });
       rows.push(['','','','Total ventas', netV, ivaV, totV], [],
         ['COMPRAS Y GASTOS'], ['Fecha compra','Cliente','N° de seguimiento','Detalle','Neto','IVA','Total pagado']);
-      purch.forEach(function(r){ rows.push([r.when, r.s.clientName||'', r.s.trackingCode||'', r.e.desc||'', r.net, r.iva, r.gross]); });
+      purch.forEach(function(r){ rows.push([r.when, r.labelText, r.trackingText, r.descText, r.net, r.iva, r.gross]); });
       rows.push(['','','','Total compras', netC, ivaC, totC], [],
         ['RESUMEN'], ['IVA ventas (débito)', ivaV], ['IVA compras (crédito)', ivaC],
         [due < 0 ? 'Remanente de IVA a favor' : 'IVA a pagar', Math.abs(due)],
@@ -3806,6 +3986,389 @@ Correo Avisos: abreya.chile@gmail.com`;
     document.getElementById(id).addEventListener('change', renderFinanzasTab);
   });
 
+  /* ---------------- compras y gastos generales ---------------- */
+  var PURCHASE_CATS = ['Materiales','Herramientas','Combustible','Arriendo','Sueldos y honorarios','Servicios básicos','Publicidad','Vehículo','Otros'];
+  function purchaseCategories(){
+    var set = new Set(PURCHASE_CATS);
+    state.purchases.forEach(function(p){ if(p.category) set.add(p.category); });
+    return Array.from(set).sort(function(a,b){ return a.localeCompare(b, 'es'); });
+  }
+
+  function openPurchaseForm(existing){
+    var isEdit = !!existing;
+    var data = existing || { date: isoFromDate(new Date()), desc:'', category:'', supplier:'', docNumber:'', net:'', iva:true };
+    var html =
+      '<div class="modal-head"><h2>'+(isEdit?'Editar compra o gasto':'Nueva compra o gasto')+'</h2><button class="icon-btn" id="m-close">✕</button></div>' +
+      '<div class="modal-body">' +
+        '<div class="field-row">' +
+          '<div class="field"><label>Fecha de compra</label><input type="date" id="p-date" value="'+escapeHtml(data.date)+'"></div>' +
+          '<div class="field"><label>Valor neto (CLP)</label><input type="number" id="p-net" min="0" step="1" value="'+escapeHtml(data.net)+'" placeholder="0"></div>' +
+        '</div>' +
+        '<div class="field"><label>Descripción</label><input type="text" id="p-desc" value="'+escapeHtml(data.desc)+'" placeholder="Ej: Taladro, arriendo de bodega, bencina…"></div>' +
+        '<div class="field-row">' +
+          '<div class="field"><label>Categoría</label><input type="text" id="p-cat" list="dl-cats" value="'+escapeHtml(data.category)+'" placeholder="Elige o escribe una nueva">' +
+            '<datalist id="dl-cats">'+purchaseCategories().map(function(c){ return '<option value="'+escapeHtml(c)+'">'; }).join('')+'</datalist></div>' +
+          '<div class="field"><label>Proveedor (opcional)</label><input type="text" id="p-supplier" value="'+escapeHtml(data.supplier)+'"></div>' +
+        '</div>' +
+        '<div class="field-row">' +
+          '<div class="field"><label>N° de factura o boleta (opcional)</label><input type="text" id="p-doc" value="'+escapeHtml(data.docNumber)+'"></div>' +
+          '<div class="field"><label>IVA</label><label class="inv-check" style="padding:9px 0;"><input type="checkbox" id="p-iva"'+(data.iva===false?'':' checked')+'> Con IVA ('+IVA_PCT+'%)</label></div>' +
+        '</div>' +
+        '<div class="inv-calc" id="p-calc"></div>' +
+        '<div class="form-error" id="p-error">Completa fecha, descripción y un valor neto mayor a 0.</div>' +
+        '<div id="m-confirm-slot"></div>' +
+        '<div class="modal-actions">' +
+          (isEdit ? '<button class="btn btn-danger" id="m-delete">Eliminar</button>' : '<button class="btn btn-ghost" id="m-cancel">Cancelar</button>') +
+          '<button class="btn btn-primary" id="m-save">'+(isEdit?'Guardar cambios':'Guardar')+'</button>' +
+        '</div>' +
+      '</div>';
+    openModal(html);
+    document.getElementById('m-close').onclick = closeModal;
+    if(!isEdit) document.getElementById('m-cancel').onclick = closeModal;
+
+    function paintCalc(){
+      var pp = purchaseParts({ net: document.getElementById('p-net').value, iva: document.getElementById('p-iva').checked });
+      document.getElementById('p-calc').innerHTML =
+        '<span>Neto <b class="mono">'+formatCLP(pp.net)+'</b></span>' +
+        '<span>IVA ('+IVA_PCT+'%) <b class="mono">'+formatCLP(pp.iva)+'</b></span>' +
+        '<span>Total pagado <b class="mono">'+formatCLP(pp.gross)+'</b></span>';
+    }
+    paintCalc();
+    document.getElementById('p-net').addEventListener('input', paintCalc);
+    document.getElementById('p-iva').addEventListener('change', paintCalc);
+
+    if(isEdit){
+      document.getElementById('m-delete').onclick = function(){
+        document.getElementById('m-confirm-slot').innerHTML =
+          '<div class="confirm-box"><span>¿Eliminar esta compra? No se puede deshacer.</span>' +
+          '<span style="display:flex; gap:8px;"><button class="btn btn-ghost btn-sm" id="m-cancel-del">Cancelar</button><button class="btn btn-danger btn-sm" id="m-confirm-del">Eliminar</button></span></div>';
+        document.getElementById('m-cancel-del').onclick = function(){ document.getElementById('m-confirm-slot').innerHTML = ''; };
+        document.getElementById('m-confirm-del').onclick = async function(){
+          try{ await state.db.collection('purchases').doc(existing.id).delete(); closeModal(); }
+          catch(err){ console.error(err); alert('No se pudo eliminar la compra. Intenta de nuevo.'); }
+        };
+      };
+    }
+
+    document.getElementById('m-save').onclick = async function(){
+      var payload = {
+        date: document.getElementById('p-date').value,
+        desc: document.getElementById('p-desc').value.trim(),
+        category: document.getElementById('p-cat').value.trim(),
+        supplier: document.getElementById('p-supplier').value.trim(),
+        docNumber: document.getElementById('p-doc').value.trim(),
+        net: Number(document.getElementById('p-net').value) || 0,
+        iva: document.getElementById('p-iva').checked,
+        updatedAt: new Date().toISOString()
+      };
+      var errEl = document.getElementById('p-error');
+      if(!payload.date || !payload.desc || !(payload.net > 0)){ errEl.textContent = 'Completa fecha, descripción y un valor neto mayor a 0.'; errEl.classList.add('show'); return; }
+      if(!state.db){ errEl.textContent = 'Sin conexión a la base de datos.'; errEl.classList.add('show'); return; }
+      var btn = document.getElementById('m-save');
+      btn.disabled = true; btn.textContent = 'Guardando…';
+      try{
+        if(isEdit){
+          await state.db.collection('purchases').doc(existing.id).update(payload);
+        } else {
+          payload.createdAt = payload.updatedAt;
+          await state.db.collection('purchases').add(payload);
+        }
+        document.getElementById('buy-month').value = payload.date.slice(0,7);
+        closeModal();
+        renderComprasTab();
+      }catch(err){
+        console.error(err);
+        errEl.textContent = 'No se pudo guardar. Intenta de nuevo.';
+        errEl.classList.add('show');
+        btn.disabled = false; btn.textContent = isEdit ? 'Guardar cambios' : 'Guardar';
+      }
+    };
+  }
+
+  function renderComprasTab(){
+    var monthEl = document.getElementById('buy-month');
+    if(!monthEl.value) monthEl.value = state.calYear + '-' + pad2(state.calMonth+1);
+    var prefix = monthEl.value;
+    var catSel = document.getElementById('buy-cat'), curCat = catSel.value, cats = purchaseCategories();
+    catSel.innerHTML = '<option value="">Todas las categorías</option>' + cats.map(function(c){ return '<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>'; }).join('');
+    if(cats.indexOf(curCat) > -1) catSel.value = curCat;
+    var cat = catSel.value;
+    var box = document.getElementById('buy-results');
+
+    var list = [];
+    state.purchases.forEach(function(p, id){
+      if(ymOf(p.date) === prefix && (!cat || p.category === cat)) list.push(Object.assign({ id: id }, p, purchaseParts(p)));
+    });
+    list.sort(function(a,b){ return a.date.localeCompare(b.date); });
+    var net = sumBy(list,'net'), iva = sumBy(list,'iva'), gross = sumBy(list,'gross');
+
+    var html = '<div class="pay-summary"><h3 style="margin:0; font-size:16px; font-family:var(--font-display);">Compras y gastos de '+monthLabel(prefix)+'</h3>';
+    if(list.length === 0){
+      html += '<div class="empty-state"><div class="glyph">🧾</div><div class="msg">No hay compras ni gastos registrados en este mes.</div></div></div>';
+    } else {
+      var byCat = {};
+      list.forEach(function(p){ var k = p.category || 'Sin categoría'; byCat[k] = (byCat[k]||0) + p.gross; });
+      var catRows = Object.keys(byCat).sort(function(a,b){ return byCat[b] - byCat[a]; });
+      var maxCat = byCat[catRows[0]] || 1;
+      html +=
+        '<div class="pay-stat-grid">' +
+          '<div class="pay-stat"><div class="l">Compras netas</div><div class="v">'+formatCLP(net)+'</div></div>' +
+          '<div class="pay-stat"><div class="l">IVA compras (crédito)</div><div class="v">'+formatCLP(iva)+'</div></div>' +
+          '<div class="pay-stat"><div class="l">Total pagado</div><div class="v">'+formatCLP(gross)+'</div></div>' +
+        '</div>' +
+        '<div class="pay-table-wrap"><table class="pay-table"><thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Neto</th><th>IVA</th><th>Total pagado</th></tr></thead><tbody>' +
+        list.map(function(p){
+          return '<tr class="fin-row" data-purchase="'+p.id+'"><td>'+fmtShortDate(p.date)+'</td>' +
+            '<td>'+escapeHtml(p.desc||'')+(p.supplier?'<div class="fin-exp">'+escapeHtml(p.supplier)+'</div>':'')+(p.docNumber?'<div class="fin-exp">N° '+escapeHtml(p.docNumber)+'</div>':'')+'</td>' +
+            '<td>'+escapeHtml(p.category||'—')+'</td>' +
+            '<td class="mono">'+formatCLP(p.net)+'</td><td class="mono">'+(p.iva?formatCLP(p.iva):'—')+'</td><td class="mono">'+formatCLP(p.gross)+'</td></tr>';
+        }).join('') +
+        '</tbody><tfoot><tr><td></td><td><b>Total</b></td><td></td><td class="mono"><b>'+formatCLP(net)+'</b></td><td class="mono"><b>'+formatCLP(iva)+'</b></td><td class="mono"><b>'+formatCLP(gross)+'</b></td></tr></tfoot></table></div>' +
+        '<h4 style="margin:6px 0 0; font-size:13px; color:var(--ink-soft);">Por categoría</h4>' +
+        '<div class="cat-bars">' + catRows.map(function(k){
+          return '<div class="cat-bar"><span>'+escapeHtml(k)+'</span><span class="bar"><i style="width:'+Math.max(3, Math.round(byCat[k]/maxCat*100))+'%"></i></span><span class="mono">'+formatCLP(byCat[k])+'</span></div>';
+        }).join('') + '</div>' +
+        '<button class="btn btn-ghost btn-sm" id="btn-export-buy">⬇ CSV de compras</button>' +
+        '<div class="wa-hint" id="buy-hint" hidden></div></div>';
+    }
+    html += '<div class="fin-note" style="margin-top:6px;">Aquí van las compras y gastos generales del negocio. Los gastos de cada servicio se registran dentro del servicio y también cuentan en el resultado de abajo.</div>';
+    html += resultBlockHtml(prefix);
+    box.innerHTML = html;
+
+    box.querySelectorAll('.fin-row').forEach(function(tr){
+      tr.addEventListener('click', function(){
+        var pid = tr.getAttribute('data-purchase');
+        if(state.purchases.has(pid)) openPurchaseForm(Object.assign({ id: pid }, state.purchases.get(pid)));
+      });
+    });
+    var csvBtn = document.getElementById('btn-export-buy');
+    if(csvBtn) csvBtn.onclick = function(){
+      var rows = [['Fecha','Descripción','Categoría','Proveedor','N° documento','Neto','IVA','Total pagado']];
+      list.forEach(function(p){ rows.push([p.date, p.desc||'', p.category||'', p.supplier||'', p.docNumber||'', p.net, p.iva, p.gross]); });
+      rows.push(['','Total','','','', net, iva, gross]);
+      saveCsv('compras-abreya-'+prefix+'.csv', rowsToCsv(rows), csvBtn, document.getElementById('buy-hint'));
+    };
+  }
+  document.getElementById('btn-new-purchase').onclick = function(){ openPurchaseForm(null); };
+  ['buy-month','buy-cat'].forEach(function(id){
+    document.getElementById(id).addEventListener('change', renderComprasTab);
+  });
+
+  /* ---------------- adelantos a técnicos ---------------- */
+  function methodLabel(m){ return m === 'transferencia' ? 'Transferencia' : 'Efectivo'; }
+
+  function advancesFor(techName, from, to){
+    var out = [];
+    state.advances.forEach(function(a, id){
+      if(techName && a.technician !== techName) return;
+      if((a.date||'') < from || (a.date||'') > to) return;
+      out.push(Object.assign({ id: id }, a));
+    });
+    out.sort(function(x, y){ return x.date.localeCompare(y.date); });
+    return out;
+  }
+
+  function advancesTableHtml(list, showTech){
+    if(!list.length) return '<div class="field-hint">No hay adelantos registrados en este rango de fechas.</div>';
+    return '<div class="pay-table-wrap"><table class="pay-table"><thead><tr><th>Fecha</th>'+(showTech?'<th>Técnico</th>':'')+'<th>Método</th><th>Nota</th><th>Monto</th></tr></thead><tbody>' +
+      list.map(function(a){
+        return '<tr class="fin-row" data-advance="'+a.id+'"><td>'+fmtShortDate(a.date)+'</td>'+(showTech?'<td>'+escapeHtml(a.technician||'')+'</td>':'')+
+          '<td>'+methodLabel(a.method)+'</td><td>'+escapeHtml(a.note||'')+'</td><td class="mono">'+formatCLP(a.amount)+'</td></tr>';
+      }).join('') +
+      '</tbody><tfoot><tr><td></td>'+(showTech?'<td></td>':'')+'<td></td><td><b>Total adelantos</b></td><td class="mono"><b>'+formatCLP(sumBy(list,'amount'))+'</b></td></tr></tfoot></table></div>';
+  }
+
+  function openAdvanceForm(existing, prefillTech){
+    var isEdit = !!existing;
+    var names = Array.from(state.technicians.values()).map(function(t){ return t.name; }).filter(Boolean).sort();
+    var data = existing || { technician: prefillTech || '', amount:'', method:'efectivo', date: isoFromDate(new Date()), note:'' };
+    if(data.technician && names.indexOf(data.technician) < 0) names.push(data.technician);
+    var html =
+      '<div class="modal-head"><h2>'+(isEdit?'Editar adelanto':'Registrar adelanto')+'</h2><button class="icon-btn" id="m-close">✕</button></div>' +
+      '<div class="modal-body">' +
+        '<div class="field"><label>Técnico</label><select id="a-tech"><option value="">Elige un técnico…</option>' +
+          names.map(function(n){ return '<option value="'+escapeHtml(n)+'"'+(data.technician===n?' selected':'')+'>'+escapeHtml(n)+'</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="field-row">' +
+          '<div class="field"><label>Fecha</label><input type="date" id="a-date" value="'+escapeHtml(data.date)+'"></div>' +
+          '<div class="field"><label>Monto (CLP)</label><input type="number" id="a-amount" min="0" step="1" value="'+escapeHtml(data.amount)+'" placeholder="0"></div>' +
+        '</div>' +
+        '<div class="field"><label>Cómo se entregó</label><select id="a-method">' +
+          '<option value="efectivo"'+(data.method!=='transferencia'?' selected':'')+'>Efectivo</option>' +
+          '<option value="transferencia"'+(data.method==='transferencia'?' selected':'')+'>Transferencia</option>' +
+        '</select></div>' +
+        '<div class="field"><label>Nota (opcional)</label><input type="text" id="a-note" value="'+escapeHtml(data.note)+'" placeholder="Ej: adelanto de quincena"></div>' +
+        '<div class="form-error" id="a-error">Elige el técnico, la fecha y un monto mayor a 0.</div>' +
+        '<div id="m-confirm-slot"></div>' +
+        '<div class="modal-actions">' +
+          (isEdit ? '<button class="btn btn-danger" id="m-delete">Eliminar</button>' : '<button class="btn btn-ghost" id="m-cancel">Cancelar</button>') +
+          '<button class="btn btn-primary" id="m-save">'+(isEdit?'Guardar cambios':'Guardar adelanto')+'</button>' +
+        '</div>' +
+      '</div>';
+    openModal(html);
+    document.getElementById('m-close').onclick = closeModal;
+    if(!isEdit) document.getElementById('m-cancel').onclick = closeModal;
+
+    if(isEdit){
+      document.getElementById('m-delete').onclick = function(){
+        document.getElementById('m-confirm-slot').innerHTML =
+          '<div class="confirm-box"><span>¿Eliminar este adelanto? No se puede deshacer.</span>' +
+          '<span style="display:flex; gap:8px;"><button class="btn btn-ghost btn-sm" id="m-cancel-del">Cancelar</button><button class="btn btn-danger btn-sm" id="m-confirm-del">Eliminar</button></span></div>';
+        document.getElementById('m-cancel-del').onclick = function(){ document.getElementById('m-confirm-slot').innerHTML = ''; };
+        document.getElementById('m-confirm-del').onclick = async function(){
+          try{ await state.db.collection('advances').doc(existing.id).delete(); closeModal(); }
+          catch(err){ console.error(err); alert('No se pudo eliminar el adelanto. Intenta de nuevo.'); }
+        };
+      };
+    }
+
+    document.getElementById('m-save').onclick = async function(){
+      var payload = {
+        technician: document.getElementById('a-tech').value,
+        date: document.getElementById('a-date').value,
+        amount: Number(document.getElementById('a-amount').value) || 0,
+        method: document.getElementById('a-method').value === 'transferencia' ? 'transferencia' : 'efectivo',
+        note: document.getElementById('a-note').value.trim(),
+        updatedAt: new Date().toISOString()
+      };
+      var errEl = document.getElementById('a-error');
+      if(!payload.technician || !payload.date || !(payload.amount > 0)){ errEl.classList.add('show'); return; }
+      if(!state.db){ errEl.textContent = 'Sin conexión a la base de datos.'; errEl.classList.add('show'); return; }
+      var btn = document.getElementById('m-save');
+      btn.disabled = true; btn.textContent = 'Guardando…';
+      try{
+        if(isEdit){
+          await state.db.collection('advances').doc(existing.id).update(payload);
+        } else {
+          payload.createdAt = payload.updatedAt;
+          await state.db.collection('advances').add(payload);
+        }
+        closeModal();
+        renderPagosTab();
+      }catch(err){
+        console.error(err);
+        errEl.textContent = 'No se pudo guardar. Intenta de nuevo.';
+        errEl.classList.add('show');
+        btn.disabled = false; btn.textContent = isEdit ? 'Guardar cambios' : 'Guardar adelanto';
+      }
+    };
+  }
+  document.getElementById('btn-new-advance').onclick = function(){ openAdvanceForm(null, document.getElementById('pay-tech').value); };
+
+  /* ---------------- comparar meses ---------------- */
+  var cmpMode = 'prev';   // 'prev' | 'year' | 'custom': cómo se elige el mes contra el que se compara
+
+  function monthKeyShift(prefix, delta){
+    var p = prefix.split('-'), d = new Date(Number(p[0]), Number(p[1]) - 1 + delta, 1);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1);
+  }
+  function monthStats(prefix){
+    var r = monthResult(prefix), count = 0;
+    state.services.forEach(function(v){ if(ymOf(v.date) === prefix) count++; });
+    return { count: count, income: r.income, soldNet: r.soldNet, spent: r.svcSpent + r.genSpent,
+             commission: r.commission, profit: r.profit, avg: count ? Math.round(r.income / count) : 0 };
+  }
+  function pctChange(a, b){ return b ? (a - b) / Math.abs(b) * 100 : null; }
+  function fmtPct(p){ return (Math.round(Math.abs(p) * 10) / 10).toLocaleString('es-CL') + '%'; }
+  function fmtSigned(n){ return (n > 0 ? '+' : n < 0 ? '-' : '') + formatCLP(Math.abs(n)); }
+  // Aviso si un mes todavía no termina (la comparación sería parcial)
+  function partialMonthNote(prefix){
+    var now = new Date(), cur = now.getFullYear() + '-' + pad2(now.getMonth() + 1);
+    if(prefix !== cur) return '';
+    var days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return now.getDate() < days ? monthLabel(prefix) + ' aún no termina (va el día ' + now.getDate() + ' de ' + days + ')' : '';
+  }
+
+  function renderCompararTab(){
+    var aEl = document.getElementById('cmp-a'), bEl = document.getElementById('cmp-b');
+    if(!aEl.value) aEl.value = state.calYear + '-' + pad2(state.calMonth + 1);
+    var a = aEl.value;
+    if(cmpMode === 'prev') bEl.value = monthKeyShift(a, -1);
+    else if(cmpMode === 'year') bEl.value = monthKeyShift(a, -12);
+    else if(!bEl.value) bEl.value = monthKeyShift(a, -1);
+    var b = bEl.value;
+    var box = document.getElementById('cmp-results');
+    var A = monthStats(a), B = monthStats(b);
+    var nameA = monthLabel(a), nameB = monthLabel(b);
+
+    /* ---- conclusión principal: ventas ---- */
+    var ch = pctChange(A.income, B.income), main, dir = '';
+    if(a === b) main = 'Elige dos meses distintos para compararlos.';
+    else if(!A.income && !B.income) main = 'No hay ventas registradas ni en ' + nameA + ' ni en ' + nameB + '.';
+    else if(!B.income) main = 'En ' + nameA + ' se vendieron ' + formatCLP(A.income) + ' y en ' + nameB + ' no hubo ventas, así que no se puede calcular un porcentaje de variación.';
+    else if(Math.abs(ch) < 0.05) main = 'Las ventas de ' + nameA + ' fueron prácticamente iguales a las de ' + nameB + ' (' + formatCLP(A.income) + ').';
+    else {
+      dir = ch > 0 ? 'up' : 'down';
+      main = 'En ' + nameA + ' se vendió un ' + fmtPct(ch) + (ch > 0 ? ' más' : ' menos') + ' que en ' + nameB + ': ' +
+        formatCLP(A.income) + ' contra ' + formatCLP(B.income) + ' (' + fmtSigned(A.income - B.income) + ').';
+    }
+
+    /* ---- detalle de la conclusión ---- */
+    var notes = [];
+    var cn = pctChange(A.soldNet, B.soldNet);
+    if(B.soldNet && Math.abs(cn) >= 0.05) notes.push('El vendido líquido (sin IVA) ' + (cn > 0 ? 'subió' : 'bajó') + ' ' + fmtPct(cn) + ': ' + formatCLP(A.soldNet) + ' contra ' + formatCLP(B.soldNet) + '.');
+    if(A.count !== B.count) notes.push('Se hicieron ' + A.count + ' servicios contra ' + B.count + ' (' + (A.count > B.count ? '+' : '-') + Math.abs(A.count - B.count) + ').');
+    else if(A.count) notes.push('Se hicieron ' + A.count + ' servicios en cada mes.');
+    var cav = pctChange(A.avg, B.avg);
+    if(B.avg && A.avg && Math.abs(cav) >= 0.05) notes.push('El ticket promedio ' + (cav > 0 ? 'subió' : 'bajó') + ' ' + fmtPct(cav) + ': ' + formatCLP(A.avg) + ' contra ' + formatCLP(B.avg) + '.');
+    if(A.profit !== B.profit){
+      var cp = pctChange(A.profit, B.profit);
+      notes.push('La ganancia líquida ' + (A.profit > B.profit ? 'subió' : 'bajó') + ' de ' + formatNet(B.profit) + ' a ' + formatNet(A.profit) + (cp != null ? ' (' + fmtPct(cp) + ')' : '') + '.');
+    }
+    var cg = pctChange(A.spent, B.spent);
+    if(B.spent && Math.abs(cg) >= 0.05) notes.push('Los gastos y compras ' + (cg > 0 ? 'aumentaron' : 'bajaron') + ' ' + fmtPct(cg) + ': ' + formatCLP(A.spent) + ' contra ' + formatCLP(B.spent) + '.');
+    var warn = [partialMonthNote(a), partialMonthNote(b)].filter(Boolean);
+
+    /* ---- tabla ---- */
+    var metrics = [
+      { key:'income',     label:'Ventas (con IVA)',          money:true,  goodUp:true },
+      { key:'soldNet',    label:'Vendido líquido (sin IVA)', money:true,  goodUp:true },
+      { key:'count',      label:'Servicios',                 money:false, goodUp:true },
+      { key:'avg',        label:'Ticket promedio',           money:true,  goodUp:true },
+      { key:'spent',      label:'Gastos y compras',          money:true,  goodUp:false },
+      { key:'commission', label:'Comisiones de técnicos',    money:true,  goodUp:false },
+      { key:'profit',     label:'Ganancia líquida',          money:true,  goodUp:true }
+    ];
+    var fmt = function(m, v){ return m.money ? formatNet(v) : String(v); };
+    var rows = metrics.map(function(m){
+      var va = A[m.key], vb = B[m.key], diff = va - vb, c = pctChange(va, vb), cell;
+      if(diff === 0) cell = '<span class="fin-exp">sin cambio</span>';
+      else if(c == null) cell = '<span class="fin-exp">sin base de comparación</span>';
+      else {
+        var good = (diff > 0) === m.goodUp;
+        cell = '<span class="' + (good ? 'cmp-good' : 'cmp-bad') + '">' + (diff > 0 ? '▲ ' : '▼ ') + fmtPct(c) + '</span>';
+      }
+      return '<tr><td>' + m.label + '</td><td class="mono">' + fmt(m, va) + '</td><td class="mono">' + fmt(m, vb) + '</td>' +
+        '<td class="mono">' + (m.money ? fmtSigned(diff) : (diff > 0 ? '+' : '') + diff) + '</td><td>' + cell + '</td></tr>';
+    }).join('');
+
+    /* ---- evolución de ventas: 6 meses hasta el mes analizado ---- */
+    var hist = [], maxInc = 1;
+    for(var i = 5; i >= 0; i--){
+      var k = monthKeyShift(a, -i), st = monthStats(k);
+      hist.push({ key: k, income: st.income });
+      if(st.income > maxInc) maxInc = st.income;
+    }
+    var histHtml = '<div class="cat-bars">' + hist.map(function(h){
+      return '<div class="cat-bar' + (h.key === b ? ' b' : '') + '"><span>' + escapeHtml(monthLabel(h.key)) + (h.key === a ? ' ◀' : '') + '</span>' +
+        '<span class="bar"><i style="width:' + (h.income ? Math.max(3, Math.round(h.income / maxInc * 100)) : 0) + '%"></i></span><span class="mono">' + formatCLP(h.income) + '</span></div>';
+    }).join('') + '</div>';
+
+    box.innerHTML = '<div class="pay-summary">' +
+      '<h3 style="margin:0; font-size:16px; font-family:var(--font-display);">' + escapeHtml(nameA) + ' contra ' + escapeHtml(nameB) + '</h3>' +
+      '<div class="cmp-box ' + dir + '"><div class="main">' + escapeHtml(main) + '</div>' +
+        (notes.length ? '<ul>' + notes.map(function(n){ return '<li>' + escapeHtml(n) + '</li>'; }).join('') + '</ul>' : '') + '</div>' +
+      warn.map(function(w){ return '<div class="cmp-warn">⚠️ ' + escapeHtml(w) + ': la comparación es parcial.</div>'; }).join('') +
+      '<div class="pay-table-wrap"><table class="pay-table"><thead><tr><th></th><th>' + escapeHtml(nameA) + '</th><th>' + escapeHtml(nameB) + '</th><th>Diferencia</th><th>Variación</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<h4 style="margin:10px 0 0; font-size:13px; color:var(--ink-soft);">Ventas de los últimos 6 meses <span class="fin-exp">◀ mes analizado · en naranja, el mes comparado</span></h4>' + histHtml +
+      '<div class="fin-note">Las ventas se cuentan por la fecha del servicio. Ventas = monto de los servicios (con IVA cuando se facturó con IVA aparte); vendido líquido = sin IVA; la ganancia líquida descuenta compras y gastos netos y comisiones de técnicos.</div>' +
+    '</div>';
+  }
+  document.getElementById('cmp-a').addEventListener('change', renderCompararTab);
+  document.getElementById('cmp-b').addEventListener('change', function(){ cmpMode = 'custom'; renderCompararTab(); });
+  document.getElementById('cmp-prev').onclick = function(){ cmpMode = 'prev'; renderCompararTab(); };
+  document.getElementById('cmp-year').onclick = function(){ cmpMode = 'year'; renderCompararTab(); };
+
   /* ---------------- tabs ---------------- */
   function switchTab(tab){
     state.activeTab = tab;
@@ -3814,17 +4377,23 @@ Correo Avisos: abreya.chile@gmail.com`;
     document.getElementById('tab-tecnicos').classList.toggle('active', tab==='tecnicos');
     document.getElementById('tab-pagos').classList.toggle('active', tab==='pagos');
     document.getElementById('tab-finanzas').classList.toggle('active', tab==='finanzas');
+    document.getElementById('tab-compras').classList.toggle('active', tab==='compras');
+    document.getElementById('tab-comparar').classList.toggle('active', tab==='comparar');
     document.getElementById('view-agenda').hidden = tab!=='agenda';
     document.getElementById('view-clientes').hidden = tab!=='clientes';
     document.getElementById('view-tecnicos').hidden = tab!=='tecnicos';
     document.getElementById('view-pagos').hidden = tab!=='pagos';
     document.getElementById('view-finanzas').hidden = tab!=='finanzas';
+    document.getElementById('view-compras').hidden = tab!=='compras';
+    document.getElementById('view-comparar').hidden = tab!=='comparar';
   }
   document.getElementById('tab-agenda').onclick = function(){ switchTab('agenda'); };
   document.getElementById('tab-clientes').onclick = function(){ switchTab('clientes'); renderClientsTab(); };
   document.getElementById('tab-tecnicos').onclick = function(){ switchTab('tecnicos'); renderTechniciansTab(); };
   document.getElementById('tab-pagos').onclick = function(){ switchTab('pagos'); populatePayTechOptions(); renderPagosTab(); };
   document.getElementById('tab-finanzas').onclick = function(){ switchTab('finanzas'); renderFinanzasTab(); };
+  document.getElementById('tab-compras').onclick = function(){ switchTab('compras'); renderComprasTab(); };
+  document.getElementById('tab-comparar').onclick = function(){ switchTab('comparar'); renderCompararTab(); };
   document.getElementById('client-search').oninput = function(){ renderClientsTab(); };
 
   /* ---------------- CSV helpers (shared) ---------------- */
@@ -3959,17 +4528,19 @@ Correo Avisos: abreya.chile@gmail.com`;
     }
   }
 
-  // Por servicio: base = monto - gastos pagados (nunca negativa); efectivo = lo que ya recibió el técnico.
-  function payTotals(items, pct){
-    var t = { count: items.length, billed: 0, spent: 0, base: 0, cash: 0 };
+  // Por servicio: base = monto - gastos pagados (nunca negativa).
+  // A pagar al técnico = comisión + gastos que pagó él - efectivo ya recibido - adelantos del rango.
+  function payTotals(items, pct, advSum){
+    var t = { count: items.length, billed: 0, spent: 0, base: 0, cash: 0, reimb: 0, adv: advSum || 0 };
     items.forEach(function(s){
       var amount = Number(s.amount)||0, spent = expensesTotal(s);
       t.billed += amount; t.spent += spent;
       t.base += Math.max(0, amount - spent);
       t.cash += Math.max(0, Number(s.cashAmount)||0);
+      t.reimb += expensesPaidByTech(s);
     });
     t.commission = pct ? Math.round(t.base * pct / 100) : null;
-    t.toPay = t.commission == null ? null : t.commission - t.cash;
+    t.toPay = t.commission == null ? null : t.commission + t.reimb - t.cash - t.adv;
     return t;
   }
 
@@ -3981,24 +4552,35 @@ Correo Avisos: abreya.chile@gmail.com`;
     var onlyDone = document.getElementById('pay-only-done').checked;
     var onlyPaid = document.getElementById('pay-only-paid').checked;
     var box = document.getElementById('pagos-results');
-    var NOTE = '<div class="field-hint">La comisión se calcula sobre el monto menos los gastos de cada servicio. El efectivo ya recibido por el técnico se descuenta del pago.</div>';
+    var NOTE = '<div class="field-hint">A pagar = comisión (sobre monto − gastos) + gastos que pagó el técnico − efectivo que ya recibió − adelantos entregados dentro del rango de fechas.</div>';
+    var wireRows = function(){
+      box.querySelectorAll('[data-advance]').forEach(function(tr){
+        tr.addEventListener('click', function(){
+          var aid = tr.getAttribute('data-advance');
+          if(state.advances.has(aid)) openAdvanceForm(Object.assign({ id: aid }, state.advances.get(aid)));
+        });
+      });
+      box.querySelectorAll('tr[data-id]').forEach(function(tr){
+        tr.addEventListener('click', function(){ openDetail(tr.getAttribute('data-id')); });
+      });
+    };
 
     if(!techSel){
       var rows = Array.from(state.technicians.values()).map(function(t){
         var items = computePayroll(t.name, from, to, onlyDone, onlyPaid);
         var pct = Number(t.commissionPct)||0;
-        return Object.assign({ name: t.name, pct: pct }, payTotals(items, pct));
-      }).filter(function(r){ return r.count>0; });
+        return Object.assign({ name: t.name, pct: pct }, payTotals(items, pct, sumBy(advancesFor(t.name, from, to), 'amount')));
+      }).filter(function(r){ return r.count>0 || r.adv>0; });
       rows.sort(function(a,b){ return b.billed-a.billed; });
 
       if(rows.length===0){
-        box.innerHTML = '<div class="empty-state"><div class="glyph">💵</div><div class="msg">No hay servicios asignados a técnicos en este rango.</div></div>';
+        box.innerHTML = '<div class="empty-state"><div class="glyph">💵</div><div class="msg">No hay servicios ni adelantos de técnicos en este rango.</div></div>';
         return;
       }
-      var g = { count:0, billed:0, spent:0, base:0, cash:0, commission:0, toPay:0 };
+      var g = { count:0, billed:0, spent:0, base:0, cash:0, reimb:0, adv:0, commission:0, toPay:0 };
       rows.forEach(function(r){
         g.count += r.count; g.billed += r.billed; g.spent += r.spent; g.base += r.base; g.cash += r.cash;
-        g.commission += r.commission||0; g.toPay += r.toPay||0;
+        g.reimb += r.reimb; g.adv += r.adv; g.commission += r.commission||0; g.toPay += r.toPay||0;
       });
       box.innerHTML = '<div class="pay-summary">' +
         '<div class="pay-stat-grid">' +
@@ -4007,29 +4589,37 @@ Correo Avisos: abreya.chile@gmail.com`;
           '<div class="pay-stat"><div class="l">Gastos</div><div class="v">'+formatCLP(g.spent)+'</div></div>' +
           '<div class="pay-stat"><div class="l">Base (monto − gastos)</div><div class="v">'+formatCLP(g.base)+'</div></div>' +
           '<div class="pay-stat"><div class="l">Comisiones</div><div class="v">'+formatCLP(g.commission)+'</div></div>' +
-          '<div class="pay-stat"><div class="l">Efectivo ya recibido</div><div class="v">'+formatCLP(g.cash)+'</div></div>' +
+          '<div class="pay-stat"><div class="l">+ Gastos que pagaron los técnicos</div><div class="v">'+formatCLP(g.reimb)+'</div></div>' +
+          '<div class="pay-stat"><div class="l">− Efectivo ya recibido</div><div class="v">'+formatCLP(g.cash)+'</div></div>' +
+          '<div class="pay-stat"><div class="l">− Adelantos del rango</div><div class="v">'+formatCLP(g.adv)+'</div></div>' +
           '<div class="pay-stat"><div class="l">Total a pagar</div><div class="v">'+formatNet(g.toPay)+'</div></div>' +
         '</div>' + NOTE +
-        '<div class="pay-table-wrap"><table class="pay-table"><thead><tr><th>Técnico</th><th>Servicios</th><th>Facturado</th><th>Gastos</th><th>Base</th><th>Comisión</th><th>Efectivo</th><th>A pagar</th></tr></thead><tbody>' +
+        '<div class="pay-table-wrap"><table class="pay-table"><thead><tr><th>Técnico</th><th>Servicios</th><th>Facturado</th><th>Gastos</th><th>Base</th><th>Comisión</th><th>+ Reembolso</th><th>− Efectivo</th><th>− Adelantos</th><th>A pagar</th></tr></thead><tbody>' +
         rows.map(function(r){
           return '<tr><td>'+escapeHtml(r.name)+'</td><td class="mono">'+r.count+'</td><td class="mono">'+formatCLP(r.billed)+'</td><td class="mono">'+formatCLP(r.spent)+'</td><td class="mono">'+formatCLP(r.base)+'</td>' +
-            '<td class="mono">'+(r.pct ? r.pct+'% = '+formatCLP(r.commission) : '—')+'</td><td class="mono">'+formatCLP(r.cash)+'</td>' +
+            '<td class="mono">'+(r.pct ? r.pct+'% = '+formatCLP(r.commission) : '—')+'</td><td class="mono">'+formatCLP(r.reimb)+'</td><td class="mono">'+formatCLP(r.cash)+'</td><td class="mono">'+formatCLP(r.adv)+'</td>' +
             '<td class="mono"><b>'+(r.toPay!=null ? formatNet(r.toPay) : '—')+'</b></td></tr>';
         }).join('') +
         '</tbody></table></div>' +
+        '<h4 style="margin:10px 0 0; font-size:13px; color:var(--ink-soft);">Adelantos del rango</h4>' +
+        advancesTableHtml(advancesFor('', from, to), true) +
         '<button class="btn btn-ghost btn-sm" id="btn-export-payroll">⬇ CSV</button>' +
         '<div class="wa-hint" id="pagos-hint" hidden></div>' +
       '</div>';
+      wireRows();
       document.getElementById('btn-export-payroll').onclick = function(){
-        var csvRows = [['Técnico','Servicios','Facturado','Gastos','Base (monto - gastos)','Comisión %','Comisión','Efectivo recibido','A pagar']];
-        rows.forEach(function(r){ csvRows.push([r.name, r.count, r.billed, r.spent, r.base, r.pct||'', r.commission!=null?r.commission:'', r.cash, r.toPay!=null?r.toPay:'']); });
+        var csvRows = [['Técnico','Servicios','Facturado','Gastos','Base (monto - gastos)','Comisión %','Comisión','Gastos pagados por el técnico','Efectivo recibido','Adelantos','A pagar']];
+        rows.forEach(function(r){ csvRows.push([r.name, r.count, r.billed, r.spent, r.base, r.pct||'', r.commission!=null?r.commission:'', r.reimb, r.cash, r.adv, r.toPay!=null?r.toPay:'']); });
+        csvRows.push([], ['ADELANTOS DEL RANGO'], ['Fecha','Técnico','Método','Nota','Monto']);
+        advancesFor('', from, to).forEach(function(a){ csvRows.push([a.date, a.technician||'', methodLabel(a.method), a.note||'', a.amount]); });
         saveCsv('pagos-abreya-'+from+'_a_'+to+'.csv', rowsToCsv(csvRows), document.getElementById('btn-export-payroll'), document.getElementById('pagos-hint'));
       };
     } else {
       var items = computePayroll(techSel, from, to, onlyDone, onlyPaid);
       var techDoc = Array.from(state.technicians.values()).find(function(t){ return t.name===techSel; });
       var pct = techDoc ? Number(techDoc.commissionPct)||0 : 0;
-      var T = payTotals(items, pct);
+      var advList = advancesFor(techSel, from, to);
+      var T = payTotals(items, pct, sumBy(advList, 'amount'));
       var doneCount = items.filter(function(s){ return s.completed; }).length;
       var paidCount = items.filter(function(s){ return s.paymentStatus==='pagado'; }).length;
 
@@ -4043,39 +4633,41 @@ Correo Avisos: abreya.chile@gmail.com`;
           '<div class="pay-stat"><div class="l">Gastos</div><div class="v">'+formatCLP(T.spent)+'</div></div>' +
           '<div class="pay-stat"><div class="l">Base (monto − gastos)</div><div class="v">'+formatCLP(T.base)+'</div></div>' +
         '</div>' +
-        (pct ? '<div class="pay-stat-grid">' +
-            '<div class="pay-stat"><div class="l">Comisión ('+pct+'% de la base)</div><div class="v">'+formatCLP(T.commission)+'</div></div>' +
-            '<div class="pay-stat"><div class="l">Efectivo ya recibido</div><div class="v">'+formatCLP(T.cash)+'</div></div>' +
-            '<div class="pay-stat"><div class="l">'+(T.toPay<0 ? 'Debe entregar a la empresa' : 'A pagar (comisión − efectivo)')+'</div><div class="v" style="color:'+(T.toPay<0?'var(--danger)':'var(--green-ink)')+'">'+formatCLP(Math.abs(T.toPay))+'</div></div>' +
-          '</div>' + NOTE
-          : '<div class="pay-stat-grid"><div class="pay-stat"><div class="l">Efectivo ya recibido</div><div class="v">'+formatCLP(T.cash)+'</div></div></div>' +
-            '<div class="field-hint">Este técnico no tiene una comisión configurada. Edítala en la pestaña Técnicos para calcular automáticamente el monto a pagar.</div>') +
-        (items.length ? '<div class="pay-table-wrap"><table class="pay-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>Gastos</th><th>Base</th><th>Efectivo</th><th>Estado</th></tr></thead><tbody>' +
+        '<div class="pay-stat-grid">' +
+          (pct ? '<div class="pay-stat"><div class="l">Comisión ('+pct+'% de la base)</div><div class="v">'+formatCLP(T.commission)+'</div></div>' : '') +
+          '<div class="pay-stat"><div class="l">+ Gastos que pagó el técnico</div><div class="v">'+formatCLP(T.reimb)+'</div></div>' +
+          '<div class="pay-stat"><div class="l">− Efectivo ya recibido</div><div class="v">'+formatCLP(T.cash)+'</div></div>' +
+          '<div class="pay-stat"><div class="l">− Adelantos del rango</div><div class="v">'+formatCLP(T.adv)+'</div></div>' +
+          (pct ? '<div class="pay-stat"><div class="l">'+(T.toPay<0 ? 'Debe entregar a la empresa' : 'A pagar')+'</div><div class="v" style="color:'+(T.toPay<0?'var(--danger)':'var(--green-ink)')+'">'+formatCLP(Math.abs(T.toPay))+'</div></div>' : '') +
+        '</div>' +
+        (pct ? NOTE : '<div class="field-hint">Este técnico no tiene una comisión configurada. Edítala en la pestaña Técnicos para calcular automáticamente el monto a pagar.</div>') +
+        (items.length ? '<div class="pay-table-wrap"><table class="pay-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>Gastos</th><th>Pagó el técnico</th><th>Base</th><th>Efectivo</th><th>Estado</th></tr></thead><tbody>' +
           items.map(function(s){
             var d = dateFromISO(s.date), pp = payTotals([s], 0);
             return '<tr class="fin-row" data-id="'+s.id+'"><td>'+d.getDate()+' '+MONTHS[d.getMonth()].slice(0,3)+'</td><td>'+escapeHtml(s.clientName||'')+'</td>' +
-              '<td class="mono">'+formatCLP(s.amount)+'</td><td class="mono">'+formatCLP(pp.spent)+'</td><td class="mono">'+formatCLP(pp.base)+'</td><td class="mono">'+formatCLP(pp.cash)+'</td>' +
+              '<td class="mono">'+formatCLP(s.amount)+'</td><td class="mono">'+formatCLP(pp.spent)+'</td><td class="mono">'+formatCLP(pp.reimb)+'</td><td class="mono">'+formatCLP(pp.base)+'</td><td class="mono">'+formatCLP(pp.cash)+'</td>' +
               '<td>'+(s.paymentStatus==='pagado'?'Pagado':'Pendiente')+'</td></tr>';
           }).join('') + '</tbody></table></div>'
           : '<div class="empty-state" style="padding:24px;"><div class="msg">No hay servicios de este técnico en el rango seleccionado.</div></div>') +
+        '<h4 style="margin:10px 0 0; font-size:13px; color:var(--ink-soft);">Adelantos del rango</h4>' +
+        advancesTableHtml(advList, false) +
         '<button class="btn btn-ghost btn-sm" id="btn-export-payroll">⬇ CSV</button>' +
         '<div class="wa-hint" id="pagos-hint" hidden></div>' +
       '</div>';
-      box.querySelectorAll('.fin-row').forEach(function(tr){
-        tr.addEventListener('click', function(){ openDetail(tr.getAttribute('data-id')); });
-      });
+      wireRows();
       document.getElementById('btn-export-payroll').onclick = function(){
-        var csvRows = [['N° de seguimiento','Fecha','Hora','Cliente','Monto','Gastos','Base (monto - gastos)','Efectivo recibido','Estado de cobro','Realizado']];
+        var csvRows = [['N° de seguimiento','Fecha','Hora','Cliente','Monto','Gastos','Gastos pagados por el técnico','Base (monto - gastos)','Efectivo recibido','Estado de cobro','Realizado']];
         items.forEach(function(s){
           var pp = payTotals([s], 0);
-          csvRows.push([s.trackingCode||'', s.date, s.time||'', s.clientName||'', s.amount||0, pp.spent, pp.base, pp.cash, s.paymentStatus==='pagado'?'Pagado':'Pendiente', s.completed?'Sí':'No']);
+          csvRows.push([s.trackingCode||'', s.date, s.time||'', s.clientName||'', s.amount||0, pp.spent, pp.reimb, pp.base, pp.cash, s.paymentStatus==='pagado'?'Pagado':'Pendiente', s.completed?'Sí':'No']);
         });
-        csvRows.push(['','','','','','','','','','']);
-        csvRows.push(['','Totales','','',T.billed,T.spent,T.base,T.cash,'','']);
-        if(pct){
-          csvRows.push(['','Comisión '+pct+'% de la base','','','','','',T.commission,'','']);
-          csvRows.push(['','A pagar (comisión - efectivo)','','','','','',T.toPay,'','']);
-        }
+        csvRows.push([]);
+        csvRows.push(['','Totales','','',T.billed,T.spent,T.reimb,T.base,T.cash,'','']);
+        if(pct) csvRows.push(['','Comisión '+pct+'% de la base','','','','','','',T.commission,'','']);
+        csvRows.push(['','Adelantos del rango (descuento)','','','','','','',T.adv,'','']);
+        if(pct) csvRows.push(['','A pagar (comisión + gastos del técnico - efectivo - adelantos)','','','','','','',T.toPay,'','']);
+        csvRows.push([], ['ADELANTOS'], ['Fecha','Método','Nota','Monto']);
+        advList.forEach(function(a){ csvRows.push([a.date, methodLabel(a.method), a.note||'', a.amount]); });
         saveCsv('pago-'+techSel.toLowerCase().replace(/\s+/g,'-')+'-'+from+'_a_'+to+'.csv', rowsToCsv(csvRows), document.getElementById('btn-export-payroll'), document.getElementById('pagos-hint'));
       };
     }
@@ -4384,8 +4976,8 @@ Correo Avisos: abreya.chile@gmail.com`;
   }
 
   /* ---------------- expenses (per service) ---------------- */
-  // Cada gasto: descripción, cantidad, precio unitario NETO, fecha de compra y si lleva IVA (19%).
-  // El IVA de compra se resta del IVA de venta en el cuadre mensual.
+  // Cada gasto: descripción, cantidad, precio unitario NETO, fecha de compra, si lleva IVA (19%)
+  // y quién lo pagó. Si lo pagó el técnico, se le reembolsa en el cálculo de Pagos.
   function newExpId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
 
   function setupExpenses(id, s){
@@ -4399,6 +4991,7 @@ Correo Avisos: abreya.chile@gmail.com`;
         qty: hasQP ? (Number(e.qty)||0) : 1,
         price: hasQP ? (Number(e.price)||0) : (Number(e.amount)||0),
         iva: e.iva === true,
+        paidBy: e.paidBy === 'tecnico' ? 'tecnico' : 'empresa',
         date: e.date || s.date || defaultDate
       };
     });
@@ -4407,11 +5000,15 @@ Correo Avisos: abreya.chile@gmail.com`;
 
     function parts(e){ return expParts({ qty: e.qty, price: e.price, iva: e.iva }); }
     function totals(){
-      return exps.reduce(function(a,e){ var p = parts(e); a.net += p.net; a.iva += p.iva; a.gross += p.gross; return a; }, { net:0, iva:0, gross:0 });
+      return exps.reduce(function(a,e){
+        var p = parts(e); a.net += p.net; a.iva += p.iva; a.gross += p.gross;
+        if(e.paidBy === 'tecnico') a.tech += p.gross;
+        return a;
+      }, { net:0, iva:0, gross:0, tech:0 });
     }
     function payload(){
       return exps.filter(function(e){ return e.desc.trim() || parts(e).net > 0; }).map(function(e){
-        return { id:e.id, desc:e.desc.trim(), qty:Number(e.qty)||0, price:Number(e.price)||0, iva:!!e.iva, date:e.date || defaultDate, amount:parts(e).net };
+        return { id:e.id, desc:e.desc.trim(), qty:Number(e.qty)||0, price:Number(e.price)||0, iva:!!e.iva, paidBy:e.paidBy, date:e.date || defaultDate, amount:parts(e).net };
       });
     }
     async function save(){
@@ -4435,6 +5032,8 @@ Correo Avisos: abreya.chile@gmail.com`;
       document.getElementById('exp-tnet').textContent = formatCLP(t.net);
       document.getElementById('exp-tiva').textContent = formatCLP(t.iva);
       document.getElementById('exp-total').textContent = formatCLP(t.gross);
+      document.getElementById('exp-ttech').textContent = formatCLP(t.tech);
+      document.getElementById('exp-ttech-row').hidden = !(t.tech > 0);
       var n = document.getElementById('exp-net');
       n.textContent = formatNet(net);
       n.className = 'mono ' + (net<0 ? 'neg' : 'pos');
@@ -4451,6 +5050,7 @@ Correo Avisos: abreya.chile@gmail.com`;
         '</div>' +
         '<div class="exp-meta">' +
           '<label>Fecha de compra<input type="date" class="e-date" value="'+escapeHtml(e.date)+'"></label>' +
+          '<label>Lo pagó<select class="e-by"><option value="empresa"'+(e.paidBy==='empresa'?' selected':'')+'>Empresa</option><option value="tecnico"'+(e.paidBy==='tecnico'?' selected':'')+'>Técnico</option></select></label>' +
           '<label class="exp-ivachk"><input type="checkbox" class="e-iva"'+(e.iva?' checked':'')+'> Con IVA ('+IVA_PCT+'%)</label>' +
           '<span class="exp-ivaamt">IVA <b class="mono e-ivaamt">'+formatCLP(p.iva)+'</b></span>' +
         '</div>' +
@@ -4464,18 +5064,20 @@ Correo Avisos: abreya.chile@gmail.com`;
         '<div class="exp-net"><span>Total neto</span><span class="mono" id="exp-tnet"></span></div>' +
         '<div class="exp-net"><span>IVA compras ('+IVA_PCT+'%)</span><span class="mono" id="exp-tiva"></span></div>' +
         '<div class="exp-net"><span>Total pagado (neto + IVA)</span><span class="mono" id="exp-total"></span></div>' +
+        '<div class="exp-net" id="exp-ttech-row" hidden><span>Pagado por el técnico (se le reembolsa)</span><span class="mono" id="exp-ttech"></span></div>' +
         '<div class="exp-net"><span>Queda (monto − total pagado)</span><span id="exp-net"></span></div>' +
       '</div>';
       box.querySelectorAll('.exp-item').forEach(function(row){
         var i = Number(row.getAttribute('data-i'));
         var d = row.querySelector('.e-desc'), q = row.querySelector('.e-qty'), p = row.querySelector('.e-price');
-        var dt = row.querySelector('.e-date'), iv = row.querySelector('.e-iva');
+        var dt = row.querySelector('.e-date'), iv = row.querySelector('.e-iva'), by = row.querySelector('.e-by');
         var subEl = row.querySelector('.exp-sub b'), ivaAmt = row.querySelector('.e-ivaamt');
         function onInput(){
           exps[i].desc = d.value;
           exps[i].qty = Number(q.value) || 0;
           exps[i].price = Number(p.value) || 0;
           exps[i].iva = iv.checked;
+          exps[i].paidBy = by.value === 'tecnico' ? 'tecnico' : 'empresa';
           exps[i].date = dt.value || defaultDate;
           var pp = parts(exps[i]);
           subEl.textContent = formatCLP(pp.net);
@@ -4487,7 +5089,7 @@ Correo Avisos: abreya.chile@gmail.com`;
           el.addEventListener('input', onInput);
           el.addEventListener('change', function(){ save(); });
         });
-        [dt, iv].forEach(function(el){
+        [dt, iv, by].forEach(function(el){
           el.addEventListener('change', function(){ onInput(); save(); });
         });
         row.querySelector('.exp-x').onclick = function(){
@@ -4498,7 +5100,7 @@ Correo Avisos: abreya.chile@gmail.com`;
         };
       });
       document.getElementById('exp-add').onclick = function(){
-        exps.push({ id: newExpId(), desc: '', qty: 1, price: 0, iva: true, date: defaultDate });
+        exps.push({ id: newExpId(), desc: '', qty: 1, price: 0, iva: true, paidBy: 'empresa', date: defaultDate });
         paint(true);
       };
       refreshTotals();
@@ -4589,12 +5191,14 @@ Correo Avisos: abreya.chile@gmail.com`;
     if(state.activeTab==='tecnicos') renderTechniciansTab();
     if(state.activeTab==='pagos'){ populatePayTechOptions(); renderPagosTab(); }
     if(state.activeTab==='finanzas') renderFinanzasTab();
+    if(state.activeTab==='compras') renderComprasTab();
+    if(state.activeTab==='comparar') renderCompararTab();
   }
 
   document.getElementById('btn-back').onclick = function(){ if(window.AYApp) window.AYApp.show('cotizador'); };
 
   function resetState(){
-    state.services = new Map(); state.clients = new Map(); state.technicians = new Map();
+    state.services = new Map(); state.clients = new Map(); state.technicians = new Map(); state.purchases = new Map(); state.advances = new Map();
     state.activeClientId = null; state.activeTechId = null;
   }
   window.AYAgenda = {
