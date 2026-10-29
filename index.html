@@ -902,6 +902,60 @@
   #agendaRoot .cmp-good{ color:var(--green-ink); font-weight:600; }
   #agendaRoot .cmp-bad{ color:var(--danger); font-weight:600; }
   #agendaRoot .cat-bar.b .bar i{ background:var(--amber); }
+  /* ---- Informe mensual (documento) ---- */
+  .rep-scroll{ overflow-x:auto; }
+  .rep-sheet{ width:210mm; max-width:100%; margin:0 auto; background:#fff; color:#1a2330; padding:12mm; box-sizing:border-box; box-shadow:0 10px 40px -10px rgba(0,0,0,.45); font-family:'Inter', system-ui, sans-serif; font-size:10.5px; line-height:1.45; }
+  .rep-sheet *{ box-sizing:border-box; }
+  .rep-head{ background:#fff; color:#102a50; border-bottom:2px solid #1b2f5e; margin:-12mm -12mm 7mm; padding:7mm 12mm 4mm; display:flex; justify-content:space-between; align-items:center; gap:12px; -webkit-print-color-adjust:exact; print-color-adjust:exact; border-bottom:3px solid #94a3b8; }
+  .rep-brand img{ height:15mm; width:auto; display:block; }
+  .rep-title{ text-align:right; font-family:'JetBrains Mono', monospace; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:#64748b; }
+  .rep-title b{ display:block; font-family:'Montserrat', sans-serif; font-size:17px; letter-spacing:.02em; text-transform:none; color:#102a50; margin-top:3px; }
+  .rep-h{ font-family:'Montserrat', sans-serif; font-size:12.5px; font-weight:700; color:#102a50; margin:7mm 0 2.5mm; padding-bottom:1.5mm; border-bottom:2px solid #102a50; page-break-after:avoid; break-after:avoid; }
+  .rep-h small{ font-family:'Inter', sans-serif; font-weight:400; font-size:9px; color:#7a8595; margin-left:6px; }
+  .rep-kpis{ display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:6px; }
+  .rep-kpi{ border:1px solid #e3e7ec; border-radius:6px; padding:6px 9px; background:#f8fafc; page-break-inside:avoid; break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .rep-kpi .l{ font-size:7.5px; text-transform:uppercase; letter-spacing:.07em; color:#7a8595; }
+  .rep-kpi .v{ font-size:15px; font-weight:700; color:#102a50; font-variant-numeric:tabular-nums; }
+  .rep-kpi.hi{ background:#e7eef5; border-color:#cbd5e1; }
+  .rep-pos{ color:#0d6b4a !important; } .rep-neg{ color:#c0392b !important; }
+  .rep-t{ width:100%; border-collapse:collapse; font-size:9.5px; }
+  .rep-t thead{ display:table-header-group; }
+  .rep-t th{ background:#102a50; color:#fff; text-align:left; padding:4px 6px; font-weight:600; font-size:7.5px; text-transform:uppercase; letter-spacing:.05em; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .rep-t th.n, .rep-t td.n{ text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .rep-t td{ padding:3.5px 6px; border-bottom:1px solid #e3e7ec; vertical-align:top; }
+  .rep-t tr{ page-break-inside:avoid; break-inside:avoid; }
+  .rep-t tfoot td{ font-weight:700; border-top:2px solid #102a50; border-bottom:0; background:#f1f5f9; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .rep-t tr.sel td{ background:#e7eef5; font-weight:600; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .rep-t tr.tot td{ font-weight:700; border-top:1.5px solid #102a50; }
+  .rep-sub{ font-size:8px; color:#7a8595; }
+  .rep-concl{ border:1px solid #cbd5e1; border-left:4px solid #1b2f5e; background:#f3f6fa; border-radius:0 6px 6px 0; padding:7px 10px; margin-bottom:5px; page-break-inside:avoid; break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .rep-concl p{ margin:0 0 3px; }
+  .rep-concl p:first-child{ font-weight:600; font-size:11px; }
+  .rep-warn{ font-size:9px; color:#8a5c07; background:#fdf1dc; border-radius:4px; padding:4px 8px; margin-bottom:5px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .rep-bars{ display:flex; flex-direction:column; gap:3px; margin:6px 0; page-break-inside:avoid; break-inside:avoid; }
+  .rep-bar{ display:grid; grid-template-columns:78px 1fr; gap:6px; align-items:center; font-size:8.5px; }
+  .rep-bar .ln{ display:grid; grid-template-columns:1fr 62px; gap:5px; align-items:center; }
+  .rep-bar .tr{ height:6px; background:#eef2f6; border-radius:3px; overflow:hidden; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .rep-bar .tr i{ display:block; height:100%; border-radius:3px; }
+  .rep-bar .tr i.s{ background:#1b2f5e; } .rep-bar .tr i.g{ background:#f5a623; }
+  .rep-bar b{ font-weight:600; text-align:right; font-variant-numeric:tabular-nums; }
+  .rep-legend{ font-size:8px; color:#7a8595; } .rep-legend i{ display:inline-block; width:8px; height:8px; border-radius:2px; margin:0 3px 0 8px; vertical-align:-1px; } .rep-legend i.s{ background:#1b2f5e; } .rep-legend i.g{ background:#f5a623; }
+  .rep-up{ color:#0d6b4a; font-weight:600; } .rep-down{ color:#c0392b; font-weight:600; }
+  .rep-note{ font-size:8px; color:#7a8595; line-height:1.5; margin-top:5mm; border-top:1px solid #e3e7ec; padding-top:2mm; }
+  @media print{
+    body.printing-report{ background:#fff !important; }
+    body.printing-report .toolbar, body.printing-report .tabs-bar, body.printing-report #cotizadorView{ display:none !important; }
+    body.printing-report #agendaRoot{ display:block !important; background:#fff; min-height:0; }
+    body.printing-report #agendaRoot .app{ display:block; min-height:0; }
+    body.printing-report #agendaRoot .sidebar, body.printing-report #agendaRoot .tabs, body.printing-report #agendaRoot .rep-controls, body.printing-report #agendaRoot .banner{ display:none !important; }
+    body.printing-report #agendaRoot main > section:not(#view-informe){ display:none !important; }
+    body.printing-report #agendaRoot .main{ padding:0; }
+    body.printing-report #agendaRoot .pagos-wrap{ display:block; padding:0; margin:0; }
+    body.printing-report #agendaRoot .pagos-results{ border:0; box-shadow:none; padding:0; background:none; overflow:visible; }
+    body.printing-report .rep-sheet{ box-shadow:none; width:auto; max-width:none; padding:0; page:report; }
+    body.printing-report .rep-head{ margin:0 0 6mm; }
+    @page report{ size:A4; margin:11mm 10mm; }
+  }
   #agendaRoot .res-table td:last-child{ text-align:right; white-space:nowrap; }
   #agendaRoot .res-sub td{ border-top:2px solid var(--border); font-weight:700; }
   #agendaRoot .res-total td{ border-top:2px solid var(--ink); font-weight:700; font-size:15px; }
@@ -1293,6 +1347,7 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
       <div class="side-summary-row"><span>Queda del mes (est.)</span><span class="v" id="sum-net">–</span></div>
       <div class="side-summary-row"><span>Vendido líquido (sin IVA)</span><span class="v" id="sum-sold">–</span></div>
       <div class="side-summary-row"><span>Ganancia líquida</span><span class="v" id="sum-profit">–</span></div>
+      <div class="side-summary-row"><span>↳ de ella, por cobrar</span><span class="v" id="sum-profit-pending">–</span></div>
       <div class="side-summary-row"><span>IVA ventas</span><span class="v" id="sum-iva-v">–</span></div>
       <div class="side-summary-row"><span>IVA compras</span><span class="v" id="sum-iva-c">–</span></div>
       <div class="side-summary-row"><span>IVA a pagar</span><span class="v amber" id="sum-iva">–</span></div>
@@ -1314,6 +1369,7 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
       <button class="tab" data-tab="compras" id="tab-compras">Compras</button>
       <button class="tab" data-tab="finanzas" id="tab-finanzas">Finanzas</button>
       <button class="tab" data-tab="comparar" id="tab-comparar">Comparar</button>
+      <button class="tab" data-tab="informe" id="tab-informe">Informe</button>
     </nav>
 
     <section id="view-agenda">
@@ -1437,6 +1493,18 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
           <button class="btn btn-ghost btn-sm btn-block" id="cmp-year">↩ Mismo mes del año pasado</button>
         </div>
         <div class="pagos-results" id="cmp-results"></div>
+      </div>
+    </section>
+
+    <section id="view-informe" hidden>
+      <div class="pagos-wrap">
+        <div class="pagos-filters rep-controls">
+          <div class="field"><label>Mes del informe</label><input type="month" id="rep-month"></div>
+          <div class="field"><label>Comparar con los últimos</label><select id="rep-span"><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option></select></div>
+          <button class="btn btn-primary btn-sm btn-block" id="rep-print">🖨 Imprimir / Guardar PDF</button>
+          <div class="fin-note">Incluye el resumen del mes, la comparación con meses anteriores y el detalle de servicios, compras y comisiones. Al imprimir elige "Guardar como PDF".</div>
+        </div>
+        <div class="pagos-results rep-scroll"><div id="rep-doc"></div></div>
       </div>
     </section>
   </main>
@@ -3096,7 +3164,7 @@ Correo Avisos: abreya.chile@gmail.com`;
   function monthResult(prefix){
     var pctByTech = {};
     state.technicians.forEach(function(t){ if(t.name) pctByTech[t.name] = Number(t.commissionPct)||0; });
-    var income = 0, paid = 0, pending = 0, commission = 0, soldNet = 0;
+    var income = 0, paid = 0, pending = 0, commission = 0, soldNet = 0, profitPending = 0;
     state.services.forEach(function(v){
       if(ymOf(v.date) !== prefix) return;
       var iv = ivaOf(v), total = iv ? iv.total : (Number(v.amount)||0);
@@ -3104,7 +3172,13 @@ Correo Avisos: abreya.chile@gmail.com`;
       soldNet += serviceNet(v);
       if(v.paymentStatus === 'pagado') paid += total; else pending += total;
       var pct = pctByTech[v.technician] || 0;
-      if(pct) commission += Math.round(Math.max(0, (Number(v.amount)||0) - expensesTotal(v)) * pct / 100);
+      var svcCommission = pct ? Math.round(Math.max(0, (Number(v.amount)||0) - expensesTotal(v)) * pct / 100) : 0;
+      commission += svcCommission;
+      // Margen de un servicio aún no cobrado: su neto - sus gastos netos - su comisión
+      if(v.paymentStatus !== 'pagado'){
+        var expNet = (Array.isArray(v.expenses) ? v.expenses : []).reduce(function(a,e){ return a + expParts(e).net; }, 0);
+        profitPending += serviceNet(v) - expNet - svcCommission;
+      }
     });
     var purch = purchasesInMonth(prefix);
     var svcSpent = 0, genSpent = 0;
@@ -3115,7 +3189,8 @@ Correo Avisos: abreya.chile@gmail.com`;
     var before = income - svcSpent - genSpent - commission;
     return { income:income, paid:paid, pending:pending, svcSpent:svcSpent, genSpent:genSpent, commission:commission,
              ivaV:ivaV, ivaC:ivaC, due:due, ivaPay:ivaPay, before:before, after:before - ivaPay,
-             soldNet:soldNet, purchNet:purchNet, profit: soldNet - purchNet - commission };
+             soldNet:soldNet, purchNet:purchNet, profit: soldNet - purchNet - commission,
+             profitPending: profitPending, profitCollected: (soldNet - purchNet - commission) - profitPending };
   }
   function resultBlockHtml(prefix){
     var r = monthResult(prefix);
@@ -3126,14 +3201,18 @@ Correo Avisos: abreya.chile@gmail.com`;
         '<div class="pay-stat"><div class="l">Vendido (con IVA)</div><div class="v">'+formatCLP(r.income)+'</div></div>' +
         '<div class="pay-stat"><div class="l">Vendido líquido (sin IVA)</div><div class="v">'+formatCLP(r.soldNet)+'</div></div>' +
         '<div class="pay-stat"><div class="l">Comisiones de técnicos</div><div class="v">'+formatCLP(r.commission)+'</div></div>' +
-        '<div class="pay-stat"><div class="l">Ganancia líquida</div><div class="v '+neg(r.profit)+'">'+formatNet(r.profit)+'</div></div>' +
+        '<div class="pay-stat"><div class="l">Ganancia líquida (cobrada o no)</div><div class="v '+neg(r.profit)+'">'+formatNet(r.profit)+'</div></div>' +
+        '<div class="pay-stat"><div class="l">↳ ya cobrada</div><div class="v '+neg(r.profitCollected)+'">'+formatNet(r.profitCollected)+'</div></div>' +
+        '<div class="pay-stat"><div class="l">↳ por cobrar</div><div class="v">'+formatNet(r.profitPending)+'</div></div>' +
       '</div>' +
       '<h4>Ganancia líquida (sin IVA)</h4>' +
       '<div class="pay-table-wrap"><table class="pay-table res-table"><tbody>' +
         '<tr><td>Vendido líquido <span class="fin-exp">neto de los servicios del mes, sin IVA</span></td><td class="mono">'+formatCLP(r.soldNet)+'</td></tr>' +
         '<tr><td>− Compras y gastos <span class="fin-exp">netos, de servicios y generales</span></td><td class="mono">'+formatCLP(r.purchNet)+'</td></tr>' +
         '<tr><td>− Comisiones de técnicos <span class="fin-exp">calculadas sobre monto − gastos</span></td><td class="mono">'+formatCLP(r.commission)+'</td></tr>' +
-        '<tr class="res-total"><td>Ganancia líquida</td><td class="mono" style="color:'+(r.profit<0?'var(--danger)':'var(--green-ink)')+'">'+formatNet(r.profit)+'</td></tr>' +
+        '<tr class="res-total"><td>Ganancia líquida <span class="fin-exp">incluye los servicios aún no cobrados</span></td><td class="mono" style="color:'+(r.profit<0?'var(--danger)':'var(--green-ink)')+'">'+formatNet(r.profit)+'</td></tr>' +
+        '<tr><td>↳ de la cual ya cobrada <span class="fin-exp">lo cobrado menos todos los costos del mes</span></td><td class="mono">'+formatNet(r.profitCollected)+'</td></tr>' +
+        '<tr><td>↳ de la cual por cobrar <span class="fin-exp">margen de los servicios pendientes de cobro</span></td><td class="mono">'+formatNet(r.profitPending)+'</td></tr>' +
       '</tbody></table></div>' +
       '<h4>Caja (lo que queda en mano)</h4>' +
       '<div class="pay-table-wrap"><table class="pay-table res-table"><tbody>' +
@@ -3358,6 +3437,7 @@ Correo Avisos: abreya.chile@gmail.com`;
     var profitEl = document.getElementById('sum-profit');
     profitEl.textContent = formatNet(res.profit);
     profitEl.className = 'v ' + (res.profit < 0 ? 'neg' : 'green');
+    document.getElementById('sum-profit-pending').textContent = formatNet(res.profitPending);
     spent = res.svcSpent + res.genSpent;
     var net = res.after;
     var ivaV = res.ivaV, ivaC = res.ivaC;
@@ -4369,6 +4449,200 @@ Correo Avisos: abreya.chile@gmail.com`;
   document.getElementById('cmp-prev').onclick = function(){ cmpMode = 'prev'; renderCompararTab(); };
   document.getElementById('cmp-year').onclick = function(){ cmpMode = 'year'; renderCompararTab(); };
 
+  /* ---------------- informe mensual (documento para imprimir / guardar como PDF) ---------------- */
+  function repVar(cur, prev, goodUp){
+    var c = pctChange(cur, prev);
+    if(c == null) return '<span class="rep-sub">—</span>';
+    if(Math.abs(c) < 0.05) return '<span class="rep-sub">=</span>';
+    var good = (cur > prev) === goodUp;
+    return '<span class="' + (good ? 'rep-up' : 'rep-down') + '">' + (cur > prev ? '▲ ' : '▼ ') + fmtPct(c) + '</span>';
+  }
+
+  // Logo AbreYa: el mismo que usa el documento de cotización
+  var REP_LOGO = (document.querySelector('.doc-header img.brand-logo') || {}).src || '';
+  function reportHtml(prefix, span){
+    var R = monthResult(prefix);
+    var from = prefix + '-01', to = prefix + '-31';
+    var pctByTech = {};
+    state.technicians.forEach(function(t){ if(t.name) pctByTech[t.name] = Number(t.commissionPct)||0; });
+    var nameA = monthLabel(prefix);
+    var neg = function(v){ return v < 0 ? ' rep-neg' : ' rep-pos'; };
+
+    /* --- servicios del mes --- */
+    var svcs = [];
+    state.services.forEach(function(v, id){ if(ymOf(v.date) === prefix) svcs.push(Object.assign({ id: id }, v)); });
+    svcs.sort(function(a, b){ return (a.date + (a.time||'')).localeCompare(b.date + (b.time||'')); });
+    var tot = { amount:0, spent:0, comm:0, left:0 };
+    var svcRows = svcs.map(function(v){
+      var amount = Number(v.amount)||0, spent = expensesTotal(v);
+      var comm = pctByTech[v.technician] ? Math.round(Math.max(0, amount - spent) * pctByTech[v.technician] / 100) : 0;
+      var left = amount - spent - comm;
+      tot.amount += amount; tot.spent += spent; tot.comm += comm; tot.left += left;
+      var d = dateFromISO(v.date), exps = Array.isArray(v.expenses) ? v.expenses : [];
+      var tags = [v.trackingCode || '', v.invoiced ? 'Factura ' + (v.invoiceNumber || 's/n') : 'Sin factura'].filter(Boolean).map(escapeHtml).join(' · ');
+      return '<tr><td>' + d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0,3) + '</td>' +
+        '<td><b>' + escapeHtml(v.clientName||'') + '</b><div class="rep-sub">' + escapeHtml(v.description||'') + '</div><div class="rep-sub">' + tags + '</div>' +
+          (exps.length ? '<div class="rep-sub">Gastos: ' + exps.map(function(e){ return escapeHtml(e.desc||'') + ' ' + formatCLP(expParts(e).gross) + (e.paidBy === 'tecnico' ? ' (técnico)' : ''); }).join(' · ') + '</div>' : '') + '</td>' +
+        '<td>' + escapeHtml(v.technician || '—') + '</td>' +
+        '<td class="n">' + formatCLP(amount) + '</td><td class="n">' + formatCLP(spent) + '</td><td class="n">' + formatCLP(comm) + '</td>' +
+        '<td class="n"><b>' + formatNet(left) + '</b></td>' +
+        '<td>' + (v.paymentStatus === 'pagado' ? 'Cobrado' : 'Por cobrar') + (v.completed ? '' : '<div class="rep-sub">no realizado</div>') + '</td></tr>';
+    }).join('');
+
+    /* --- compras y gastos generales --- */
+    var gen = [];
+    state.purchases.forEach(function(pu, id){ if(ymOf(pu.date) === prefix) gen.push(Object.assign({ id: id }, pu, purchaseParts(pu))); });
+    gen.sort(function(a, b){ return a.date.localeCompare(b.date); });
+    var byCat = {};
+    gen.forEach(function(g){ var k = g.category || 'Sin categoría'; byCat[k] = (byCat[k]||0) + g.gross; });
+    var catList = Object.keys(byCat).sort(function(a, b){ return byCat[b] - byCat[a]; });
+    var genNet = sumBy(gen, 'net'), genIva = sumBy(gen, 'iva'), genGross = sumBy(gen, 'gross');
+
+    /* --- técnicos --- */
+    var techRows = [], tt = { count:0, base:0, commission:0, reimb:0, cash:0, adv:0, toPay:0 };
+    state.technicians.forEach(function(t){
+      var pct = Number(t.commissionPct)||0;
+      var T = payTotals(computePayroll(t.name, from, to, false, false), pct, sumBy(advancesFor(t.name, from, to), 'amount'));
+      if(!T.count && !T.adv) return;
+      techRows.push({ name: t.name, pct: pct, T: T });
+      tt.count += T.count; tt.base += T.base; tt.commission += T.commission||0; tt.reimb += T.reimb; tt.cash += T.cash; tt.adv += T.adv; tt.toPay += T.toPay||0;
+    });
+    techRows.sort(function(a, b){ return (a.name||'').localeCompare(b.name||'', 'es'); });
+
+    /* --- comparación con meses anteriores --- */
+    var series = [];
+    for(var i = span; i >= 0; i--){ var k = monthKeyShift(prefix, -i); series.push({ key: k, st: monthStats(k) }); }
+    var shown = series.slice(1);
+    var cur = series[series.length - 1].st, prevM = series[series.length - 2].st, nameB = monthLabel(series[series.length - 2].key);
+    var lines = [];
+    var ch = pctChange(cur.income, prevM.income);
+    if(!cur.income && !prevM.income) lines.push('No hay ventas registradas en ' + nameA + ' ni en ' + nameB + '.');
+    else if(!prevM.income) lines.push('En ' + nameA + ' se vendieron ' + formatCLP(cur.income) + '; en ' + nameB + ' no hubo ventas.');
+    else if(Math.abs(ch) < 0.05) lines.push('Las ventas de ' + nameA + ' fueron iguales a las de ' + nameB + ' (' + formatCLP(cur.income) + ').');
+    else lines.push('En ' + nameA + ' se vendió un ' + fmtPct(ch) + (ch > 0 ? ' más' : ' menos') + ' que en ' + nameB + ' (' + formatCLP(cur.income) + ' contra ' + formatCLP(prevM.income) + ').');
+    var cg = pctChange(cur.spent, prevM.spent);
+    if(prevM.spent && Math.abs(cg) >= 0.05) lines.push('Los gastos y compras ' + (cg > 0 ? 'aumentaron' : 'bajaron') + ' un ' + fmtPct(cg) + ' (' + formatCLP(cur.spent) + ' contra ' + formatCLP(prevM.spent) + ').');
+    else if(!prevM.spent && cur.spent) lines.push('Los gastos y compras fueron ' + formatCLP(cur.spent) + '; el mes anterior no hubo.');
+    var olds = series.slice(1, -1).map(function(x){ return x.st; });
+    var avgInc = olds.length ? Math.round(olds.reduce(function(a, x){ return a + x.income; }, 0) / olds.length) : 0;
+    var ca = pctChange(cur.income, avgInc);
+    if(avgInc && Math.abs(ca) >= 0.05) lines.push('Contra el promedio de los ' + olds.length + ' meses anteriores (' + formatCLP(avgInc) + '), ' + nameA + ' vendió un ' + fmtPct(ca) + (ca > 0 ? ' más' : ' menos') + '.');
+    if(cur.profit !== prevM.profit) lines.push('La ganancia líquida ' + (cur.profit > prevM.profit ? 'subió' : 'bajó') + ' de ' + formatNet(prevM.profit) + ' a ' + formatNet(cur.profit) + '.');
+    var warn = partialMonthNote(prefix);
+
+    var maxV = 1;
+    shown.forEach(function(x){ maxV = Math.max(maxV, x.st.income, x.st.spent); });
+    var bars = shown.map(function(x){
+      var w = function(v){ return v ? Math.max(2, Math.round(v / maxV * 100)) : 0; };
+      return '<div class="rep-bar"><span>' + escapeHtml(monthLabel(x.key)) + (x.key === prefix ? ' ◀' : '') + '</span><div>' +
+        '<div class="ln"><div class="tr"><i class="s" style="width:' + w(x.st.income) + '%"></i></div><b>' + formatCLP(x.st.income) + '</b></div>' +
+        '<div class="ln"><div class="tr"><i class="g" style="width:' + w(x.st.spent) + '%"></i></div><b>' + formatCLP(x.st.spent) + '</b></div></div></div>';
+    }).join('');
+    var cmpRows = shown.map(function(x, idx){
+      var prev = series[idx].st, st = x.st;
+      return '<tr class="' + (x.key === prefix ? 'sel' : '') + '"><td>' + escapeHtml(monthLabel(x.key)) + '</td>' +
+        '<td class="n">' + formatCLP(st.income) + '</td><td class="n">' + repVar(st.income, prev.income, true) + '</td>' +
+        '<td class="n">' + st.count + '</td>' +
+        '<td class="n">' + formatCLP(st.spent) + '</td><td class="n">' + repVar(st.spent, prev.spent, false) + '</td>' +
+        '<td class="n">' + formatCLP(st.commission) + '</td>' +
+        '<td class="n">' + formatNet(st.profit) + '</td><td class="n">' + repVar(st.profit, prev.profit, true) + '</td></tr>';
+    }).join('');
+
+    var kpi = function(label, value, cls){ return '<div class="rep-kpi' + (cls ? ' ' + cls : '') + '"><div class="l">' + label + '</div><div class="v">' + value + '</div></div>'; };
+    var dueLabel = R.due < 0 ? 'Remanente de IVA a favor' : 'IVA a pagar';
+
+    return '<div class="rep-sheet">' +
+      '<div class="rep-head"><div class="rep-brand"><img src="' + REP_LOGO + '" alt="AbreYa Cerrajería"></div>' +
+        '<div class="rep-title">Informe mensual<b>' + escapeHtml(nameA) + '</b></div></div>' +
+
+      '<h2 class="rep-h" style="margin-top:0;">Resumen del mes</h2>' +
+      '<div class="rep-kpis">' +
+        kpi('Vendido (con IVA)', formatCLP(R.income)) +
+        kpi('Vendido líquido (sin IVA)', formatCLP(R.soldNet)) +
+        kpi('Ganancia líquida', '<span class="' + neg(R.profit).trim() + '">' + formatNet(R.profit) + '</span>', 'hi') +
+        kpi('Gastos y compras (pagado)', formatCLP(R.svcSpent + R.genSpent)) +
+        kpi('Comisiones de técnicos', formatCLP(R.commission)) +
+        kpi(dueLabel, formatCLP(Math.abs(R.due))) +
+        kpi('Cobrado', formatCLP(R.paid)) +
+        kpi('Por cobrar', formatCLP(R.pending)) +
+        kpi('Servicios · ticket promedio', cur.count + ' · ' + formatCLP(cur.avg)) +
+      '</div>' +
+      '<table class="rep-t"><thead><tr><th colspan="2">Ganancia líquida (sin IVA)</th></tr></thead><tbody>' +
+        '<tr><td>Vendido líquido <span class="rep-sub">neto de los servicios del mes</span></td><td class="n">' + formatCLP(R.soldNet) + '</td></tr>' +
+        '<tr><td>− Compras y gastos <span class="rep-sub">netos, de servicios y generales</span></td><td class="n">' + formatCLP(R.purchNet) + '</td></tr>' +
+        '<tr><td>− Comisiones de técnicos</td><td class="n">' + formatCLP(R.commission) + '</td></tr>' +
+        '<tr class="tot"><td>Ganancia líquida <span class="rep-sub">incluye servicios aún no cobrados</span></td><td class="n' + neg(R.profit) + '">' + formatNet(R.profit) + '</td></tr>' +
+        '<tr><td>&nbsp;&nbsp;↳ ya cobrada</td><td class="n">' + formatNet(R.profitCollected) + '</td></tr>' +
+        '<tr><td>&nbsp;&nbsp;↳ por cobrar</td><td class="n">' + formatNet(R.profitPending) + '</td></tr>' +
+      '</tbody></table>' +
+      '<table class="rep-t" style="margin-top:4mm;"><thead><tr><th colspan="2">Caja (con IVA)</th></tr></thead><tbody>' +
+        '<tr><td>Ingresos de los servicios del mes</td><td class="n">' + formatCLP(R.income) + '</td></tr>' +
+        '<tr><td>− Gastos de los servicios</td><td class="n">' + formatCLP(R.svcSpent) + '</td></tr>' +
+        '<tr><td>− Compras y gastos generales</td><td class="n">' + formatCLP(R.genSpent) + '</td></tr>' +
+        '<tr><td>− Comisiones de técnicos</td><td class="n">' + formatCLP(R.commission) + '</td></tr>' +
+        '<tr class="tot"><td>Queda antes de IVA</td><td class="n">' + formatNet(R.before) + '</td></tr>' +
+        '<tr><td>− IVA a pagar <span class="rep-sub">IVA ventas ' + formatCLP(R.ivaV) + ' − IVA compras ' + formatCLP(R.ivaC) + (R.due < 0 ? ' (remanente a favor ' + formatCLP(-R.due) + ')' : '') + '</span></td><td class="n">' + formatCLP(R.ivaPay) + '</td></tr>' +
+        '<tr class="tot"><td>Queda después de IVA</td><td class="n' + neg(R.after) + '">' + formatNet(R.after) + '</td></tr>' +
+      '</tbody></table>' +
+
+      '<h2 class="rep-h">Comparación con meses anteriores <small>ventas y gastos de los últimos ' + span + ' meses</small></h2>' +
+      '<div class="rep-concl">' + lines.map(function(l){ return '<p>' + escapeHtml(l) + '</p>'; }).join('') + '</div>' +
+      (warn ? '<div class="rep-warn">⚠️ ' + escapeHtml(warn) + ': la comparación es parcial.</div>' : '') +
+      '<div class="rep-legend"><i class="s"></i>Ventas<i class="g"></i>Gastos y compras</div>' +
+      '<div class="rep-bars">' + bars + '</div>' +
+      '<table class="rep-t"><thead><tr><th>Mes</th><th class="n">Ventas</th><th class="n">Var.</th><th class="n">Serv.</th><th class="n">Gastos y compras</th><th class="n">Var.</th><th class="n">Comisiones</th><th class="n">Ganancia líquida</th><th class="n">Var.</th></tr></thead><tbody>' + cmpRows + '</tbody></table>' +
+
+      '<h2 class="rep-h">Detalle de servicios <small>' + svcs.length + ' servicios en ' + escapeHtml(nameA) + '</small></h2>' +
+      (svcs.length ? '<table class="rep-t"><thead><tr><th>Fecha</th><th>Cliente / servicio</th><th>Técnico</th><th class="n">Monto</th><th class="n">Gastos</th><th class="n">Comisión</th><th class="n">Queda</th><th>Cobro</th></tr></thead><tbody>' + svcRows +
+        '</tbody><tfoot><tr><td></td><td>Total</td><td></td><td class="n">' + formatCLP(tot.amount) + '</td><td class="n">' + formatCLP(tot.spent) + '</td><td class="n">' + formatCLP(tot.comm) + '</td><td class="n">' + formatNet(tot.left) + '</td><td></td></tr></tfoot></table>'
+        : '<div class="rep-sub">No hay servicios registrados este mes.</div>') +
+
+      '<h2 class="rep-h">Compras y gastos generales <small>fuera de los servicios</small></h2>' +
+      (gen.length ? '<table class="rep-t"><thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th class="n">Neto</th><th class="n">IVA</th><th class="n">Total pagado</th></tr></thead><tbody>' +
+        gen.map(function(g){
+          return '<tr><td>' + fmtShortDate(g.date) + '</td><td>' + escapeHtml(g.desc||'') + (g.supplier ? '<div class="rep-sub">' + escapeHtml(g.supplier) + (g.docNumber ? ' · N° ' + escapeHtml(g.docNumber) : '') + '</div>' : '') + '</td><td>' + escapeHtml(g.category||'—') + '</td>' +
+            '<td class="n">' + formatCLP(g.net) + '</td><td class="n">' + formatCLP(g.iva) + '</td><td class="n">' + formatCLP(g.gross) + '</td></tr>';
+        }).join('') +
+        '</tbody><tfoot><tr><td></td><td>Total</td><td></td><td class="n">' + formatCLP(genNet) + '</td><td class="n">' + formatCLP(genIva) + '</td><td class="n">' + formatCLP(genGross) + '</td></tr></tfoot></table>' +
+        '<div class="rep-sub" style="margin-top:2mm;">Por categoría: ' + catList.map(function(c){ return escapeHtml(c) + ' ' + formatCLP(byCat[c]); }).join(' · ') + '</div>'
+        : '<div class="rep-sub">No hay compras generales registradas este mes.</div>') +
+
+      '<h2 class="rep-h">Comisiones y pagos a técnicos</h2>' +
+      (techRows.length ? '<table class="rep-t"><thead><tr><th>Técnico</th><th class="n">Serv.</th><th class="n">Base</th><th class="n">Comisión</th><th class="n">+ Gastos que pagó</th><th class="n">− Efectivo</th><th class="n">− Adelantos</th><th class="n">A pagar</th></tr></thead><tbody>' +
+        techRows.map(function(r){
+          return '<tr><td>' + escapeHtml(r.name) + '</td><td class="n">' + r.T.count + '</td><td class="n">' + formatCLP(r.T.base) + '</td>' +
+            '<td class="n">' + (r.pct ? r.pct + '% = ' + formatCLP(r.T.commission) : '—') + '</td><td class="n">' + formatCLP(r.T.reimb) + '</td><td class="n">' + formatCLP(r.T.cash) + '</td><td class="n">' + formatCLP(r.T.adv) + '</td>' +
+            '<td class="n"><b>' + (r.T.toPay != null ? formatNet(r.T.toPay) : '—') + '</b></td></tr>';
+        }).join('') +
+        '</tbody><tfoot><tr><td>Total</td><td class="n">' + tt.count + '</td><td class="n">' + formatCLP(tt.base) + '</td><td class="n">' + formatCLP(tt.commission) + '</td><td class="n">' + formatCLP(tt.reimb) + '</td><td class="n">' + formatCLP(tt.cash) + '</td><td class="n">' + formatCLP(tt.adv) + '</td><td class="n">' + formatNet(tt.toPay) + '</td></tr></tfoot></table>'
+        : '<div class="rep-sub">No hay servicios asignados a técnicos este mes.</div>') +
+
+      '<div class="rep-note">Informe generado el ' + new Date().toLocaleDateString('es-CL') + '. Los servicios se cuentan por su fecha, las compras por su fecha de compra y el IVA por las fechas de factura y de compra. ' +
+        'Las cifras por servicio incluyen IVA; el vendido líquido y la ganancia líquida lo excluyen. La comisión de cada técnico se calcula sobre el monto menos los gastos del servicio. Documento de control interno, no reemplaza la declaración de impuestos.</div>' +
+    '</div>';
+  }
+
+  function renderInformeTab(){
+    var mEl = document.getElementById('rep-month');
+    if(!mEl.value) mEl.value = state.calYear + '-' + pad2(state.calMonth + 1);
+    document.getElementById('rep-doc').innerHTML = reportHtml(mEl.value, Number(document.getElementById('rep-span').value) || 6);
+  }
+  // Imprime solo el informe: la clase en <body> oculta el resto de la app durante la impresión.
+  var repPrevTitle = null;
+  function printReport(){
+    renderInformeTab();
+    repPrevTitle = document.title;
+    document.title = 'AbreYa - Informe ' + document.getElementById('rep-month').value;
+    document.body.classList.add('printing-report');
+    window.print();
+  }
+  window.addEventListener('afterprint', function(){
+    document.body.classList.remove('printing-report');
+    if(repPrevTitle != null){ document.title = repPrevTitle; repPrevTitle = null; }
+  });
+  document.getElementById('rep-print').onclick = printReport;
+  ['rep-month','rep-span'].forEach(function(id){ document.getElementById(id).addEventListener('change', renderInformeTab); });
+
   /* ---------------- tabs ---------------- */
   function switchTab(tab){
     state.activeTab = tab;
@@ -4379,6 +4653,7 @@ Correo Avisos: abreya.chile@gmail.com`;
     document.getElementById('tab-finanzas').classList.toggle('active', tab==='finanzas');
     document.getElementById('tab-compras').classList.toggle('active', tab==='compras');
     document.getElementById('tab-comparar').classList.toggle('active', tab==='comparar');
+    document.getElementById('tab-informe').classList.toggle('active', tab==='informe');
     document.getElementById('view-agenda').hidden = tab!=='agenda';
     document.getElementById('view-clientes').hidden = tab!=='clientes';
     document.getElementById('view-tecnicos').hidden = tab!=='tecnicos';
@@ -4386,6 +4661,7 @@ Correo Avisos: abreya.chile@gmail.com`;
     document.getElementById('view-finanzas').hidden = tab!=='finanzas';
     document.getElementById('view-compras').hidden = tab!=='compras';
     document.getElementById('view-comparar').hidden = tab!=='comparar';
+    document.getElementById('view-informe').hidden = tab!=='informe';
   }
   document.getElementById('tab-agenda').onclick = function(){ switchTab('agenda'); };
   document.getElementById('tab-clientes').onclick = function(){ switchTab('clientes'); renderClientsTab(); };
@@ -4394,6 +4670,7 @@ Correo Avisos: abreya.chile@gmail.com`;
   document.getElementById('tab-finanzas').onclick = function(){ switchTab('finanzas'); renderFinanzasTab(); };
   document.getElementById('tab-compras').onclick = function(){ switchTab('compras'); renderComprasTab(); };
   document.getElementById('tab-comparar').onclick = function(){ switchTab('comparar'); renderCompararTab(); };
+  document.getElementById('tab-informe').onclick = function(){ switchTab('informe'); renderInformeTab(); };
   document.getElementById('client-search').oninput = function(){ renderClientsTab(); };
 
   /* ---------------- CSV helpers (shared) ---------------- */
@@ -5193,6 +5470,7 @@ Correo Avisos: abreya.chile@gmail.com`;
     if(state.activeTab==='finanzas') renderFinanzasTab();
     if(state.activeTab==='compras') renderComprasTab();
     if(state.activeTab==='comparar') renderCompararTab();
+    if(state.activeTab==='informe') renderInformeTab();
   }
 
   document.getElementById('btn-back').onclick = function(){ if(window.AYApp) window.AYApp.show('cotizador'); };
