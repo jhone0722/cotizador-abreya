@@ -598,6 +598,11 @@
   #agendaRoot .done-toggle.checked{ background:var(--accent); border-color:var(--accent); color:#fff; }
   #agendaRoot .done-toggle svg{ width:12px; height:12px; display:block; }
   #agendaRoot .service-card.is-done{ opacity:.65; }
+  /* Servicios asignados al socio (CerraVolt): color propio para distinguirlos */
+  #agendaRoot .service-card.assigned{ box-shadow:inset 4px 0 0 #7c4dff; background:rgba(124,77,255,.07); }
+  #agendaRoot .status-pill.asignado{ background:rgba(124,77,255,.16); color:#7c4dff; }
+  #agendaRoot .wchip.assigned{ border-left-color:#7c4dff; background:rgba(124,77,255,.10); }
+  #agendaRoot .month-chip.assigned{ background:rgba(124,77,255,.16); color:#6a3de8; border-left-color:#7c4dff; }
   #agendaRoot .service-card.is-done .service-client, #agendaRoot .service-card.is-done .service-desc, #agendaRoot .service-card.is-done .service-time .t{
     text-decoration:line-through;
   }
@@ -1099,7 +1104,23 @@
     body.m-preview #tabCotizacion > aside{ display:none; }
     body:not(.m-preview) #tabCotizacion > .preview-wrap{ display:none; }
   }
-  @media print{ .doc-page, .rep-sheet{ zoom:1 !important; } #pdfBusy, #pdfSheet, .mobile-bar{ display:none !important; } }
+  /* Ventana para apartar un horario en CerraVolt */
+  #abSheet{
+    position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center; padding:16px;
+    background:rgba(5,10,20,.62); backdrop-filter:blur(3px);
+  }
+  #abSheet .pdf-card{ border-radius:18px; max-width:420px; text-align:left; padding:20px 18px; max-height:92vh; overflow-y:auto; }
+  #abSheet .pdf-title{ text-align:center; }
+  .ab-note{ font-size:12.5px; color:#9fb6cf; line-height:1.45; }
+  .ab-label{ font-size:12px; color:#9fb6cf; margin-bottom:4px; display:block; }
+  .ab-input{
+    width:100%; min-height:44px; padding:9px 12px; border-radius:10px; border:1px solid #2a4a73; background:#0b1626; color:#eaf2fb;
+    font-family:var(--body); font-size:16px;
+  }
+  .ab-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ab-err{ color:#ff8a8a; font-size:13px; white-space:pre-line; }
+  .pdf-btn.danger{ background:#3a1620; border-color:#7a2a3a; color:#ffb3bd; }
+  @media print{ .doc-page, .rep-sheet{ zoom:1 !important; } #pdfBusy, #pdfSheet, #abSheet, .mobile-bar{ display:none !important; } }
 </style>
 </head>
 <body>
@@ -1222,6 +1243,12 @@
         <div class="field"><label>Concepto</label><input id="qAbonoLabel" placeholder="Visita técnica"></div>
         <div class="field"><label>Monto abonado ($)</label><input id="qAbonoAmount" type="number" min="0" inputmode="numeric" placeholder="0"></div>
       </div>
+    </div>
+
+    <div class="field-group">
+      <h2>Asignar a CerraVolt</h2>
+      <p id="abStatus" style="font-size:12.5px; color:var(--steel-300); margin-bottom:10px;"></p>
+      <button class="add-btn" id="abBtn" type="button" onclick="openCerravolt()">🔒 Asignar horario a CerraVolt</button>
     </div>
 
 
@@ -1960,6 +1987,230 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
     }
   };
   window.AYApp = AYApp;
+
+  // ---------- Asignar un horario en la agenda de CerraVolt (sin detalle) ----------
+  // CerraVolt es otro proyecto de Firebase: se abre una segunda conexión e inicia sesión con la cuenta de CerraVolt.
+  // Allí solo se guarda fecha, hora y duración: la agenda de CerraVolt muestra "Servicio asignado", sin cliente ni montos.
+  const CERRAVOLT_CONFIG = {
+    apiKey: "AIzaSyCOGLSdmg7n7pqBpbhVlAFxUiMTWSy7aPo",
+    authDomain: "cotizador-cerravolt.firebaseapp.com",
+    projectId: "cotizador-cerravolt",
+    storageBucket: "cotizador-cerravolt.firebasestorage.app",
+    messagingSenderId: "451257669398",
+    appId: "1:451257669398:web:030e9e1315b986f789a237"
+  };
+  let cerravoltApp = null;
+  const CERRAVOLT_NAME = 'CerraVolt';
+  let cerravoltAssign = null;   // { id, date, time, durationMin, pct, serviceId } de la cotización abierta
+  let cerravoltRemote = null;   // respuesta de CerraVolt: 'enviado' | 'aceptado' | 'rechazado' | 'missing'
+  function cerravoltFb(){
+    if(!cerravoltApp){
+      try{ cerravoltApp = firebase.app('cerravolt'); }
+      catch(e){ cerravoltApp = firebase.initializeApp(CERRAVOLT_CONFIG, 'cerravolt'); }
+    }
+    return cerravoltApp;
+  }
+  function cerravoltUser(){
+    return new Promise(resolve => {
+      const unsub = cerravoltFb().auth().onAuthStateChanged(u => { unsub(); resolve(u); });
+    });
+  }
+  function cerravoltBlocks(uid){
+    return cerravoltFb().firestore().collection('users').doc(uid).collection('blocks');
+  }
+  function cerravoltWhen(a){
+    const d = new Date(a.date + 'T12:00:00');
+    const day = d.toLocaleDateString('es-CL', { weekday:'short', day:'numeric', month:'short' });
+    const h = a.durationMin >= 60 ? (a.durationMin % 60 ? (a.durationMin / 60).toFixed(1) : (a.durationMin / 60)) + ' h' : a.durationMin + ' min';
+    return day + ' · ' + a.time + ' (' + h + ')' + (a.pct ? ' · ' + a.pct + '% de ganancia' : '');
+  }
+  function renderCerravoltStatus(){
+    const st = document.getElementById('abStatus'), btn = document.getElementById('abBtn');
+    if(!st || !btn) return;
+    if(cerravoltAssign){
+      const remote = {
+        enviado:  '📨 Enviado a CerraVolt. Si ya tiene un servicio a esa hora, le llegará como solicitud para evaluar.',
+        aceptado: '✓ Aceptado por CerraVolt.',
+        rechazado:'✗ CerraVolt no puede en ese horario: elige otro.',
+        missing:  '⚠ El horario ya no existe en CerraVolt: vuelve a asignarlo.'
+      }[cerravoltRemote] || '';
+      st.innerHTML = '🔒 <b>Asignado a CerraVolt:</b> ' + escapeHtml(cerravoltWhen(cerravoltAssign)) + (remote ? '<br>' + remote : '');
+      btn.textContent = '🔒 Cambiar o quitar asignación';
+    } else {
+      st.textContent = 'Aparta un horario en la agenda de CerraVolt. Allí solo se verá "Servicio asignado", sin detalles del cliente.';
+      btn.textContent = '🔒 Asignar horario a CerraVolt';
+    }
+  }
+  // Consulta (sin pedir contraseña) si CerraVolt ya aceptó o rechazó el horario
+  async function refreshCerravoltRemote(){
+    cerravoltRemote = null;
+    if(!cerravoltAssign){ renderCerravoltStatus(); return; }
+    renderCerravoltStatus();
+    try{
+      const u = await cerravoltUser();
+      if(!u || !cerravoltAssign) return;
+      const snap = await cerravoltBlocks(u.uid).doc(cerravoltAssign.id).get();
+      cerravoltRemote = !snap.exists ? 'missing' : (snap.data().status || 'enviado');
+      renderCerravoltStatus();
+    }catch(e){ console.error(e); }
+  }
+  function cerravoltErrorText(e){
+    const c = (e && e.code) || '';
+    if(c === 'permission-denied') return 'CerraVolt no permite guardar aquí. En Firebase del proyecto cotizador-cerravolt, publica la regla: match /users/{userId}/{document=**} { allow read, write: if request.auth != null && request.auth.uid == userId; }';
+    if(c.startsWith('auth/') && /credential|password|user-not-found|invalid-email/.test(c)) return 'Correo o contraseña de CerraVolt incorrectos.';
+    if(c === 'auth/too-many-requests') return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
+    if(c === 'auth/network-request-failed' || c === 'unavailable') return 'Sin conexión. Revisa tu internet e intenta de nuevo.';
+    return 'No se pudo completar la acción. Intenta de nuevo.';
+  }
+  function abCard(html){
+    let el = document.getElementById('abSheet');
+    if(!el){
+      el = document.createElement('div'); el.id = 'abSheet'; el.className = 'no-print';
+      el.addEventListener('click', e => { if(e.target === el) abClose(); });
+      document.body.appendChild(el);
+    }
+    el.innerHTML = '<div class="pdf-card">' + html + '</div>';
+    return el;
+  }
+  function abClose(){ const el = document.getElementById('abSheet'); if(el) el.remove(); }
+
+  async function openCerravolt(){
+    if(!document.getElementById('qNum').value.trim()){
+      alert('Primero escribe el número de la cotización.');
+      return;
+    }
+    abCard('<div class="pdf-title">CerraVolt</div><div style="display:flex; justify-content:center; padding:14px;"><div class="pdf-spin"></div></div>');
+    let user = null;
+    try{ user = await cerravoltUser(); }catch(e){ console.error(e); }
+    if(user) cerravoltForm(user); else cerravoltLogin();
+  }
+
+  function cerravoltLogin(msg){
+    const el = abCard(
+      '<div class="pdf-title">Cuenta de CerraVolt</div>' +
+      '<div class="ab-note">Inicia sesión con la cuenta de CerraVolt para apartar horarios en su agenda. Quedará recordada en este dispositivo.</div>' +
+      '<div><label class="ab-label" for="abEmail">Correo</label><input class="ab-input" id="abEmail" type="email" autocomplete="username" autocapitalize="off"></div>' +
+      '<div><label class="ab-label" for="abPass">Contraseña</label><input class="ab-input" id="abPass" type="password" autocomplete="current-password"></div>' +
+      '<div class="ab-err" id="abErr">' + escapeHtml(msg || '') + '</div>' +
+      '<button type="button" class="pdf-btn main" id="abLogin">Iniciar sesión</button>' +
+      '<button type="button" class="pdf-close" id="abCancel">Cancelar</button>');
+    el.querySelector('#abCancel').onclick = abClose;
+    const go = async () => {
+      const email = el.querySelector('#abEmail').value.trim(), pass = el.querySelector('#abPass').value;
+      if(!email || !pass){ el.querySelector('#abErr').textContent = 'Escribe el correo y la contraseña.'; return; }
+      const btn = el.querySelector('#abLogin'); btn.textContent = 'Entrando…'; btn.style.pointerEvents = 'none';
+      try{
+        const cred = await cerravoltFb().auth().signInWithEmailAndPassword(email, pass);
+        cerravoltForm(cred.user);
+      }catch(e){
+        console.error(e);
+        btn.textContent = 'Iniciar sesión'; btn.style.pointerEvents = '';
+        el.querySelector('#abErr').textContent = cerravoltErrorText(e);
+      }
+    };
+    el.querySelector('#abLogin').onclick = go;
+    el.querySelector('#abPass').addEventListener('keydown', e => { if(e.key === 'Enter') go(); });
+  }
+
+  async function cerravoltForm(user){
+    // Actualiza la respuesta de CerraVolt (aceptado / rechazado / ya no existe)
+    if(cerravoltAssign){
+      try{
+        const snap = await cerravoltBlocks(user.uid).doc(cerravoltAssign.id).get();
+        cerravoltRemote = !snap.exists ? 'missing' : (snap.data().status || 'enviado');
+        renderCerravoltStatus();
+      }catch(e){ console.error(e); }
+    }
+    const a = cerravoltAssign;
+    const dur = a ? a.durationMin : 120;
+    const opts = [[60,'1 hora'],[90,'1,5 horas'],[120,'2 horas'],[180,'3 horas'],[240,'4 horas'],[480,'Todo el día (8 h)']];
+    const el = abCard(
+      '<div class="pdf-title">' + (a ? 'Horario en CerraVolt' : 'Asignar a CerraVolt') + '</div>' +
+      '<div class="ab-note">A CerraVolt solo le llega la fecha, la hora y su % de ganancia (sin cliente, dirección ni montos). Aquí el servicio queda en tu agenda, asignado a CerraVolt y con otro color.</div>' +
+      '<div class="ab-row">' +
+        '<div><label class="ab-label" for="abDate">Fecha</label><input class="ab-input" id="abDate" type="date" value="' + (a ? a.date : new Date().toISOString().slice(0,10)) + '"></div>' +
+        '<div><label class="ab-label" for="abTime">Hora</label><input class="ab-input" id="abTime" type="time" value="' + (a ? a.time : '09:00') + '"></div>' +
+      '</div>' +
+      '<div><label class="ab-label" for="abDur">Duración</label><select class="ab-input" id="abDur">' +
+        opts.map(o => '<option value="' + o[0] + '"' + (o[0] === dur ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div>' +
+      '<div><label class="ab-label" for="abPct">% de ganancia para CerraVolt</label><input class="ab-input" id="abPct" type="number" min="1" max="100" step="1" inputmode="numeric" placeholder="Ej: 30" value="' + (a && a.pct ? a.pct : (window.AYAgenda.getTechPct(CERRAVOLT_NAME) || '')) + '">' +
+        '<div class="ab-note" style="margin-top:4px;">Se calcula sobre monto − gastos y aparece en Pagos como un técnico más (“CerraVolt”). Es el porcentaje de CerraVolt en todos sus servicios.</div></div>' +
+      '<div class="ab-err" id="abErr"></div>' +
+      '<button type="button" class="pdf-btn main" id="abSave">' + (a ? 'Actualizar horario' : 'Apartar horario') + '</button>' +
+      (a ? '<button type="button" class="pdf-btn danger" id="abRemove">Quitar asignación</button>' : '') +
+      '<button type="button" class="pdf-close" id="abCancel">Cerrar</button>' +
+      '<button type="button" class="pdf-close" id="abLogout" style="font-size:12px; min-height:32px; padding:4px;">Cerrar sesión de CerraVolt (' + escapeHtml(user.email || '') + ')</button>');
+    el.querySelector('#abCancel').onclick = abClose;
+    el.querySelector('#abLogout').onclick = async () => { try{ await cerravoltFb().auth().signOut(); }catch(e){} abClose(); };
+    const busy = (btn, txt) => { btn.textContent = txt; btn.style.pointerEvents = 'none'; };
+    el.querySelector('#abSave').onclick = async function(){
+      const date = el.querySelector('#abDate').value, time = el.querySelector('#abTime').value;
+      const durationMin = Number(el.querySelector('#abDur').value) || 120;
+      const pct = Number(el.querySelector('#abPct').value);
+      if(!date || !time){ el.querySelector('#abErr').textContent = 'Elige la fecha y la hora.'; return; }
+      if(!(pct > 0 && pct <= 100)){ el.querySelector('#abErr').textContent = 'Indica el porcentaje de ganancia para CerraVolt (entre 1 y 100).'; return; }
+      busy(this, 'Guardando…');
+      const restore = () => { this.textContent = a ? 'Actualizar horario' : 'Apartar horario'; this.style.pointerEvents = ''; };
+      let blockSent = false;
+      try{
+        const now = new Date().toISOString();
+        const id = cerravoltAssign ? cerravoltAssign.id : 'ay-' + Date.now().toString(36);
+        // status null: CerraVolt decide (solicitud si ya tiene un servicio a esa hora)
+        const data = { date, time, durationMin, sharePct: pct, status: null, source: 'AbreYa', updatedAt: now };
+        if(!cerravoltAssign) data.createdAt = now;
+        await cerravoltBlocks(user.uid).doc(id).set(data, { merge: true });
+        blockSent = true;
+        cerravoltAssign = { id, date, time, durationMin, pct, serviceId: cerravoltAssign ? cerravoltAssign.serviceId : null };
+        // el servicio queda en la agenda de AbreYa, asignado a CerraVolt (como un técnico)
+        const contact = document.getElementById('cContact').value.trim();
+        const firstItem = items.find(it => it.desc && it.desc.trim());
+        cerravoltAssign.serviceId = await window.AYAgenda.upsertPartnerService({
+          partner: CERRAVOLT_NAME, pct, blockId: id, date, time,
+          clientName: document.getElementById('cName').value.trim() || 'Sin nombre',
+          phone: contact.replace(/\D/g, '').length >= 8 ? contact : '',
+          address: document.getElementById('cAddr').value.trim(),
+          description: document.getElementById('qService').value.trim() || (firstItem ? firstItem.desc.trim() : ''),
+          quoteNumber: document.getElementById('qNum').value.trim(),
+          amount: computeTotal(items, document.getElementById('qIva').checked)
+        }, cerravoltAssign.serviceId);
+        cerravoltRemote = 'enviado';
+        renderCerravoltStatus();
+        abClose();
+        showSaveStatus('Servicio asignado a CerraVolt');
+        saveQuote().catch(() => {});
+      }catch(e){
+        console.error(e);
+        restore();
+        if(blockSent){
+          renderCerravoltStatus();
+          saveQuote().catch(() => {});
+          el.querySelector('#abErr').textContent = 'El horario se envió a CerraVolt, pero no se pudo registrar el servicio en tu agenda. Toca "Actualizar horario" para reintentar.';
+        } else {
+          el.querySelector('#abErr').textContent = cerravoltErrorText(e);
+        }
+      }
+    };
+    const rm = el.querySelector('#abRemove');
+    if(rm) rm.onclick = async function(){
+      busy(this, 'Quitando…');
+      try{
+        if(cerravoltAssign.serviceId) await window.AYAgenda.unassignPartnerService(cerravoltAssign.serviceId);
+        await cerravoltBlocks(user.uid).doc(cerravoltAssign.id).delete();
+        cerravoltAssign = null;
+        cerravoltRemote = null;
+        renderCerravoltStatus();
+        abClose();
+        showSaveStatus('Asignación quitada de CerraVolt');
+        saveQuote().catch(() => {});
+      }catch(e){
+        console.error(e);
+        this.textContent = 'Quitar asignación'; this.style.pointerEvents = '';
+        el.querySelector('#abErr').textContent = (e && e.code === 'already-paid')
+          ? 'Este servicio ya se le pagó a CerraVolt en Pagos, no se puede quitar la asignación. Elimina primero ese pago.'
+          : cerravoltErrorText(e);
+      }
+    };
+  }
 
   // Guarda la cotización y abre el formulario de nueva cita en la Agenda con
   // cliente, teléfono, dirección, N° de cotización y monto ya completados.
@@ -2721,6 +2972,7 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
       serviceShow: document.getElementById('qServiceShow').checked,
       items: items,
       iva: document.getElementById('qIva').checked,
+      cerravolt: cerravoltAssign,
       notes: {
         text: document.getElementById('qNotes').innerHTML,
         condValida: document.getElementById('qCondValida').checked,
@@ -2751,6 +3003,8 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
     document.getElementById('cRut').value = s.client?.rut || '';
     document.getElementById('qScope').value = s.scope || '';
     document.getElementById('qDiscount').value = s.discount || 0;
+    cerravoltAssign = s.cerravolt || null;
+    refreshCerravoltRemote();
     document.getElementById('qAbonoOn').checked = !!s.abono?.on;
     document.getElementById('qAbonoLabel').value = s.abono?.label || '';
     document.getElementById('qAbonoAmount').value = s.abono?.amount || '';
@@ -3187,6 +3441,8 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
     document.getElementById('qSched').value = '';
     document.getElementById('qScope').value = '';
     document.getElementById('qDiscount').value = 0;
+    cerravoltAssign = null;
+    refreshCerravoltRemote();
     document.getElementById('qAbonoOn').checked = false;
     document.getElementById('qAbonoLabel').value = '';
     document.getElementById('qAbonoAmount').value = '';
@@ -3995,7 +4251,7 @@ Correo Avisos: abreya.chile@gmail.com`;
 
   function serviceCardHtml(s){
     var done = !!s.completed;
-    return '<div class="service-card'+(done?' is-done':'')+'" data-id="'+s.id+'" tabindex="0" role="button" aria-label="Ver detalle del servicio de '+escapeHtml(s.clientName||'')+'">' +
+    return '<div class="service-card'+(done?' is-done':'')+(s.assignedTo?' assigned':'')+'" data-id="'+s.id+'" tabindex="0" role="button" aria-label="Ver detalle del servicio de '+escapeHtml(s.clientName||'')+'">' +
       '<button type="button" class="done-toggle'+(done?' checked':'')+'" title="'+(done?'Marcar como pendiente':'Marcar como realizado')+'">'+DONE_ICON+'</button>' +
       '<div class="service-time"><span class="t mono">'+escapeHtml(s.time||'--:--')+'</span>' +
         (s.technician ? '<span class="tech">'+escapeHtml(s.technician)+'</span>' : '') +
@@ -4011,6 +4267,7 @@ Correo Avisos: abreya.chile@gmail.com`;
         (s.invoiced ? '<span class="card-exp">🧾 Factura '+escapeHtml(s.invoiceNumber||'emitida')+'</span>' : '') +
         (Number(s.cashAmount)>0 ? '<span class="card-exp">💵 Efectivo '+formatCLP(s.cashAmount)+'</span>' : '') +
         '<span class="status-pill '+(s.paymentStatus==='pagado'?'pagado':'pendiente')+'">'+(s.paymentStatus==='pagado'?'Pagado':'Pendiente')+'</span>' +
+        (s.assignedTo ? '<span class="status-pill asignado">🔒 Asignado a '+escapeHtml(s.assignedTo)+'</span>' : '') +
         '<div class="wa-row">'+waTechButton(s,'wa-btn')+waClientButton(s,'wa-btn')+'</div>' +
       '</div>' +
     '</div>';
@@ -4090,7 +4347,7 @@ Correo Avisos: abreya.chile@gmail.com`;
         '</button>' +
         '<div class="week-col-body">' +
         ((items.length===0 && wblocks.length===0) ? '<div class="week-col-empty">—</div>' : items.map(function(s){
-          return '<button type="button" class="wchip'+(s.completed?' is-done':'')+' '+(s.paymentStatus==='pagado'?'pagado':'pendiente')+'" data-id="'+s.id+'">' +
+          return '<button type="button" class="wchip'+(s.completed?' is-done':'')+(s.assignedTo?' assigned':'')+' '+(s.paymentStatus==='pagado'?'pagado':'pendiente')+'" data-id="'+s.id+'">' +
             '<span class="wchip-time">'+escapeHtml(s.time||'')+'</span><span class="wchip-name">'+escapeHtml(s.clientName||'')+'</span>' +
           '</button>';
         }).join('') + wblocks.map(function(b){
@@ -4133,7 +4390,7 @@ Correo Avisos: abreya.chile@gmail.com`;
       var mblocks = blocksForDate(c.iso);
       var cls = 'month-cell'+(c.iso===todayIso?' today':'')+(c.iso===state.selectedDate?' selected':'')+((items.length||mblocks.length)?' has-items':'');
       var chipList = items.map(function(s){
-        return '<button type="button" class="month-chip'+(s.completed?' is-done':'')+' '+(s.paymentStatus==='pagado'?'pagado':'pendiente')+'" data-id="'+s.id+'">'+escapeHtml((s.time?s.time+' ':'')+ (s.clientName||''))+'</button>';
+        return '<button type="button" class="month-chip'+(s.completed?' is-done':'')+(s.assignedTo?' assigned':'')+' '+(s.paymentStatus==='pagado'?'pagado':'pendiente')+'" data-id="'+s.id+'">'+escapeHtml((s.time?s.time+' ':'')+ (s.clientName||''))+'</button>';
       }).concat(mblocks.map(function(b){
         return '<button type="button" class="month-chip block'+(b._st==='pendiente'?' pending':'')+'" data-block="'+b.id+'">'+escapeHtml((b.time?b.time+' ':'')+(b._st==='pendiente'?'⏳ Solicitud':'🔒 Asignado'))+'</button>';
       }));
@@ -6071,6 +6328,9 @@ Correo Avisos: abreya.chile@gmail.com`;
     });
     var box = document.getElementById('m-expenses');
     var timer = null, dirty = false;
+    var who = (s.technician || '').trim() || 'Técnico';   // quien puede pagar un gasto además de la empresa (ej. CerraVolt)
+    var whoPct = 0;
+    state.technicians.forEach(function(t){ if(t.name === s.technician) whoPct = Number(t.commissionPct) || 0; });
 
     function parts(e){ return expParts({ qty: e.qty, price: e.price, iva: e.iva }); }
     function totals(){
@@ -6111,6 +6371,27 @@ Correo Avisos: abreya.chile@gmail.com`;
       var n = document.getElementById('exp-net');
       n.textContent = formatNet(net);
       n.className = 'mono ' + (net<0 ? 'neg' : 'pos');
+      // Liquidación al final del servicio: lo que corresponde pagarle a quien lo hizo y lo que queda para la empresa
+      var settle = document.getElementById('exp-settle');
+      if(settle){
+        if(!s.technician || !whoPct){ settle.innerHTML = ''; }
+        else {
+          var live = Object.assign({}, state.services.get(id) || s, { expenses: exps });
+          var T = payTotals([live], whoPct, 0);
+          var row = function(l, v, bold){ return '<div class="exp-net"'+(bold?' style="font-weight:700;"':'')+'><span>'+l+'</span><span class="mono">'+v+'</span></div>'; };
+          settle.innerHTML =
+            '<div class="exp-head" style="margin-top:10px;"><span>Liquidación del servicio · '+escapeHtml(who)+'</span></div>' +
+            row('Monto del servicio', formatCLP(T.billed)) +
+            row('− Gastos (todos)', formatCLP(T.spent)) +
+            row('= Utilidad (monto − gastos)', formatNet(T.billed - T.spent)) +
+            row('Ganancia de '+escapeHtml(who)+' ('+whoPct+'%)', formatCLP(T.commission)) +
+            row('+ Gastos que pagó '+escapeHtml(who), formatCLP(T.reimb)) +
+            row('− Efectivo ya recibido por '+escapeHtml(who), formatCLP(T.cash)) +
+            row(T.toPay < 0 ? escapeHtml(who)+' debe entregar' : 'A pagar a '+escapeHtml(who), formatCLP(Math.abs(T.toPay)), true) +
+            row('Queda para AbreYa', formatNet(T.billed - T.spent - T.commission), true) +
+            '<div class="field-hint">Se paga desde la pestaña Pagos, junto con el resto del período.</div>';
+        }
+      }
     }
     function rowHtml(e, i){
       var p = parts(e);
@@ -6124,7 +6405,7 @@ Correo Avisos: abreya.chile@gmail.com`;
         '</div>' +
         '<div class="exp-meta">' +
           '<label>Fecha de compra<input type="date" class="e-date" value="'+escapeHtml(e.date)+'"></label>' +
-          '<label>Lo pagó<select class="e-by"><option value="empresa"'+(e.paidBy==='empresa'?' selected':'')+'>Empresa</option><option value="tecnico"'+(e.paidBy==='tecnico'?' selected':'')+'>Técnico</option></select></label>' +
+          '<label>Lo pagó<select class="e-by"><option value="empresa"'+(e.paidBy==='empresa'?' selected':'')+'>Empresa</option><option value="tecnico"'+(e.paidBy==='tecnico'?' selected':'')+'>'+escapeHtml(who)+'</option></select></label>' +
           '<label class="exp-ivachk"><input type="checkbox" class="e-iva"'+(e.iva?' checked':'')+'> Con IVA ('+IVA_PCT+'%)</label>' +
           '<span class="exp-ivaamt">IVA <b class="mono e-ivaamt">'+formatCLP(p.iva)+'</b></span>' +
         '</div>' +
@@ -6133,13 +6414,15 @@ Correo Avisos: abreya.chile@gmail.com`;
     function paint(focusLast){
       box.innerHTML = '<div class="exp-box">' +
         '<div class="exp-head"><span>Gastos del servicio</span></div>' +
+        (s.assignedTo ? '<div class="field-hint" style="margin:0 0 8px;">🔒 Servicio asignado a '+escapeHtml(s.assignedTo)+': los gastos los registra <b>solo AbreYa</b>, desde aquí. '+escapeHtml(s.assignedTo)+' no puede registrarlos en su app.</div>' : '') +
         (exps.length ? exps.map(rowHtml).join('') : '<div class="exp-empty">Aún no hay gastos. Agrega el primero abajo.</div>') +
         '<button type="button" class="exp-addbtn" id="exp-add">+ Agregar gasto</button>' +
         '<div class="exp-net"><span>Total neto</span><span class="mono" id="exp-tnet"></span></div>' +
         '<div class="exp-net"><span>IVA compras ('+IVA_PCT+'%)</span><span class="mono" id="exp-tiva"></span></div>' +
         '<div class="exp-net"><span>Total pagado (neto + IVA)</span><span class="mono" id="exp-total"></span></div>' +
-        '<div class="exp-net" id="exp-ttech-row" hidden><span>Pagado por el técnico (se le reembolsa)</span><span class="mono" id="exp-ttech"></span></div>' +
+        '<div class="exp-net" id="exp-ttech-row" hidden><span>Pagado por '+escapeHtml(who)+' (se le reembolsa)</span><span class="mono" id="exp-ttech"></span></div>' +
         '<div class="exp-net"><span>Queda (monto − total pagado)</span><span id="exp-net"></span></div>' +
+        '<div id="exp-settle"></div>' +
       '</div>';
       box.querySelectorAll('.exp-item').forEach(function(row){
         var i = Number(row.getAttribute('data-i'));
@@ -6202,6 +6485,7 @@ Correo Avisos: abreya.chile@gmail.com`;
             '<span class="status-pill '+(s.paymentStatus==='pagado'?'pagado':'pendiente')+'">'+(s.paymentStatus==='pagado'?'Pagado':'Pendiente')+'</span>' +
             '<span class="status-pill '+(s.completed?'realizado':'porhacer')+'">'+(s.completed?'Realizado':'Por realizar')+'</span>' +
             (s.techPaymentId ? '<span class="status-pill pagado">Técnico pagado ✓</span>' : '') +
+            (s.assignedTo ? '<span class="status-pill asignado">🔒 Asignado a '+escapeHtml(s.assignedTo)+'</span>' : '') +
             '<span class="status-pill '+(s.invoiced?'facturado':'sinfactura')+'">'+(s.invoiced?('Factura '+escapeHtml(s.invoiceNumber||'emitida')):'Sin factura')+'</span>' +
           '</span>' +
         '</div>' +
@@ -6296,7 +6580,55 @@ Correo Avisos: abreya.chile@gmail.com`;
     state.services = new Map(); state.clients = new Map(); state.technicians = new Map(); state.purchases = new Map(); state.advances = new Map(); state.blocks = new Map(); state.techPayments = new Map();
     state.activeClientId = null; state.activeTechId = null;
   }
+  /* ---------------- servicios asignados a un socio (CerraVolt) ---------------- */
+  // El socio se trata como un técnico: aparece en Pagos con su porcentaje de ganancia.
+  async function ensurePartnerTech(name, pct){
+    var t = null, tid = null;
+    state.technicians.forEach(function(v, id){ if(v.name === name){ t = v; tid = id; } });
+    if(!t){
+      await state.db.collection('technicians').add({ name: name, phone: '', specialty: '', commissionPct: pct, partner: true, createdAt: new Date().toISOString() });
+    } else if(Number(t.commissionPct) !== pct){
+      await state.db.collection('technicians').doc(tid).update({ commissionPct: pct });
+    }
+  }
+  async function upsertPartnerService(d, existingId){
+    if(!state.db) throw new Error('Sin conexión a la base de datos.');
+    await ensurePartnerTech(d.partner, d.pct);
+    var clientId = await upsertClient(d.phone, { name: d.clientName, address: d.address });
+    var payload = {
+      date: d.date, time: d.time, clientName: d.clientName, phone: d.phone, clientId: clientId, address: d.address,
+      description: d.description, quoteNumber: d.quoteNumber || '', amount: Number(d.amount)||0,
+      technician: d.partner, assignedTo: d.partner, cerravoltBlockId: d.blockId
+    };
+    if(existingId && state.services.has(existingId)){
+      await state.db.collection('services').doc(existingId).update(payload);
+      return existingId;
+    }
+    payload.paymentStatus = 'pendiente';
+    payload.notes = '';
+    payload.createdAt = new Date().toISOString();
+    payload.trackingCode = await nextTrackingCode();
+    var ref = await state.db.collection('services').add(payload);
+    return ref.id;
+  }
+  // Quita la asignación (el servicio queda en la agenda, sin técnico). No se permite si ya se le pagó al socio.
+  async function unassignPartnerService(id){
+    var sv = state.services.get(id);
+    if(!sv) return;
+    if(sv.techPaymentId){ var e = new Error('paid'); e.code = 'already-paid'; throw e; }
+    var del = firebase.firestore.FieldValue.delete();
+    await state.db.collection('services').doc(id).update({ technician: '', assignedTo: del, cerravoltBlockId: del });
+  }
+  function getTechPct(name){
+    var pct = '';
+    state.technicians.forEach(function(v){ if(v.name === name && Number(v.commissionPct) > 0) pct = Number(v.commissionPct); });
+    return pct;
+  }
+
   window.AYAgenda = {
+    upsertPartnerService: upsertPartnerService,
+    unassignPartnerService: unassignPartnerService,
+    getTechPct: getTechPct,
     start: function(userDocRef){
       if(state.dbReady && state.db === userDocRef) return;
       unsubs.forEach(function(u){ try{ u(); }catch(e){} }); unsubs = [];
