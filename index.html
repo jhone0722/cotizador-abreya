@@ -2126,7 +2126,7 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
     const opts = [[60,'1 hora'],[90,'1,5 horas'],[120,'2 horas'],[180,'3 horas'],[240,'4 horas'],[480,'Todo el día (8 h)']];
     const el = abCard(
       '<div class="pdf-title">' + (a ? 'Horario en CerraVolt' : 'Asignar a CerraVolt') + '</div>' +
-      '<div class="ab-note">A CerraVolt solo le llega la fecha, la hora y su % de ganancia (sin cliente, dirección ni montos). Aquí el servicio queda en tu agenda, asignado a CerraVolt y con otro color.</div>' +
+      '<div class="ab-note">A CerraVolt solo le llega la fecha, la hora, el valor del servicio y su % de ganancia (sin cliente ni dirección). Aquí el servicio queda en tu agenda, asignado a CerraVolt y con otro color.</div>' +
       '<div class="ab-row">' +
         '<div><label class="ab-label" for="abDate">Fecha</label><input class="ab-input" id="abDate" type="date" value="' + (a ? a.date : new Date().toISOString().slice(0,10)) + '"></div>' +
         '<div><label class="ab-label" for="abTime">Hora</label><input class="ab-input" id="abTime" type="time" value="' + (a ? a.time : '09:00') + '"></div>' +
@@ -2156,7 +2156,8 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
         const now = new Date().toISOString();
         const id = cerravoltAssign ? cerravoltAssign.id : 'ay-' + Date.now().toString(36);
         // status null: CerraVolt decide (solicitud si ya tiene un servicio a esa hora)
-        const data = { date, time, durationMin, sharePct: pct, status: null, source: 'AbreYa', updatedAt: now };
+        const svcAmount = computeTotal(items, document.getElementById('qIva').checked, parseFloat(document.getElementById('qDiscount').value) || 0);   // valor del servicio: el socio lo ve en su tarjeta
+        const data = { date, time, durationMin, sharePct: pct, amount: svcAmount, status: null, source: 'AbreYa', updatedAt: now };
         if(!cerravoltAssign) data.createdAt = now;
         await cerravoltBlocks(user.uid).doc(id).set(data, { merge: true });
         blockSent = true;
@@ -2171,7 +2172,7 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
           address: document.getElementById('cAddr').value.trim(),
           description: document.getElementById('qService').value.trim() || (firstItem ? firstItem.desc.trim() : ''),
           quoteNumber: document.getElementById('qNum').value.trim(),
-          amount: computeTotal(items, document.getElementById('qIva').checked)
+          amount: svcAmount
         }, cerravoltAssign.serviceId);
         cerravoltRemote = 'enviado';
         renderCerravoltStatus();
@@ -3945,6 +3946,7 @@ Correo Avisos: abreya.chile@gmail.com`;
     return '<button type="button" class="block-card '+(pend?'pending':'assigned')+'" data-block="'+b.id+'">' +
       '<div class="bt">'+escapeHtml(b.time||'--:--')+(end?'<small>hasta '+end+'</small>':'')+'</div>' +
       '<div class="bb"><b>'+(pend?'⏳ Solicitud de servicio · por evaluar':'🔒 Servicio asignado')+'</b>' +
+        (b.amount>0 ? '<span><b>Valor del servicio '+formatCLP(b.amount)+'</b></span>' : '') +
         '<span>Desde '+escapeHtml(b.source||'CerraVolt')+(b.sharePct?' · ganancia acordada '+escapeHtml(b.sharePct)+'%':'')+(pend?' · choca con un servicio tuyo':'')+'</span></div>' +
     '</button>';
   }
@@ -3960,7 +3962,8 @@ Correo Avisos: abreya.chile@gmail.com`;
       '<div class="modal-head"><h2>'+(pend?'Solicitud de servicio':'Servicio asignado')+'</h2><button class="icon-btn" id="m-close">✕</button></div>' +
       '<div class="modal-body">' +
         '<div class="field-hint" style="font-size:14px; color:var(--ink);">'+(pend?'⏳':'🔒')+' <b>'+WEEKDAYS[d.getDay()]+' '+d.getDate()+' de '+MONTHS[d.getMonth()]+'</b> · '+escapeHtml(b.time||'')+(end?' a '+end:'')+'</div>' +
-        (b.sharePct ? '<div class="field-hint">Ganancia acordada para AbreYa: <b>'+escapeHtml(b.sharePct)+'%</b> de la utilidad (monto − gastos).</div>' : '') +
+        (b.amount>0 ? '<div class="field-hint" style="font-size:15px; color:var(--ink);">💰 Valor del servicio: <b>'+formatCLP(b.amount)+'</b></div>' : '') +
+        (b.sharePct ? '<div class="field-hint">Ganancia acordada para AbreYa: <b>'+escapeHtml(b.sharePct)+'%</b> de la utilidad (monto − gastos).'+(b.amount>0 ? ' Si no hay gastos, serían <b>'+formatCLP(Math.round(b.amount*b.sharePct/100))+'</b>.' : '')+'</div>' : '') +
         (conflict ? '<div class="req-warn">⚠ Choca con tu servicio de las '+escapeHtml(conflict.time||'')+' ('+escapeHtml(conflict.clientName||'')+'). Evalúa si puedes tomarlo.</div>' : '') +
         '<div class="field-hint">Solicitado desde '+escapeHtml(b.source||'CerraVolt')+'. Por privacidad no se muestra el detalle del servicio.</div>' +
         '<div class="field-hint">💼 Los gastos de este servicio los registra solo '+escapeHtml(b.source||'CerraVolt')+'; aquí no se pueden agregar.</div>' +
@@ -3992,6 +3995,7 @@ Correo Avisos: abreya.chile@gmail.com`;
           var d = dateFromISO(b.date), end = blockEndTime(b), c = blockConflict(b);
           return '<div class="req-item">' +
             '<div><b>'+WEEKDAYS[d.getDay()]+' '+d.getDate()+' de '+MONTHS[d.getMonth()]+'</b> · '+escapeHtml(b.time||'')+(end?' a '+end:'')+'</div>' +
+            (b.amount>0 ? '<div class="field-hint" style="color:var(--ink);">💰 Valor del servicio: <b>'+formatCLP(b.amount)+'</b></div>' : '') +
             (b.sharePct ? '<div class="field-hint">Ganancia acordada: <b>'+escapeHtml(b.sharePct)+'%</b> de la utilidad</div>' : '') +
             (c ? '<div class="req-warn">⚠ Choca con tu servicio de las '+escapeHtml(c.time||'')+' ('+escapeHtml(c.clientName||'')+')</div>' : '') +
             '<div style="display:flex; gap:8px;"><button class="btn btn-danger btn-sm" data-rej="'+b.id+'">Rechazar</button><button class="btn btn-primary btn-sm" data-acc="'+b.id+'">Aceptar</button></div>' +
@@ -4351,7 +4355,7 @@ Correo Avisos: abreya.chile@gmail.com`;
             '<span class="wchip-time">'+escapeHtml(s.time||'')+'</span><span class="wchip-name">'+escapeHtml(s.clientName||'')+'</span>' +
           '</button>';
         }).join('') + wblocks.map(function(b){
-          return '<button type="button" class="wchip block'+(b._st==='pendiente'?' pending':'')+'" data-block="'+b.id+'"><span class="wchip-time">'+escapeHtml(b.time||'')+'</span><span class="wchip-name">'+(b._st==='pendiente'?'⏳ Solicitud':'🔒 Asignado')+'</span></button>';
+          return '<button type="button" class="wchip block'+(b._st==='pendiente'?' pending':'')+'" data-block="'+b.id+'"><span class="wchip-time">'+escapeHtml(b.time||'')+'</span><span class="wchip-name">'+(b._st==='pendiente'?'⏳ Solicitud':'🔒 Asignado')+(b.amount>0?' '+formatCLP(b.amount):'')+'</span></button>';
         }).join('')) +
         '</div>' +
       '</div>';
@@ -4392,7 +4396,7 @@ Correo Avisos: abreya.chile@gmail.com`;
       var chipList = items.map(function(s){
         return '<button type="button" class="month-chip'+(s.completed?' is-done':'')+(s.assignedTo?' assigned':'')+' '+(s.paymentStatus==='pagado'?'pagado':'pendiente')+'" data-id="'+s.id+'">'+escapeHtml((s.time?s.time+' ':'')+ (s.clientName||''))+'</button>';
       }).concat(mblocks.map(function(b){
-        return '<button type="button" class="month-chip block'+(b._st==='pendiente'?' pending':'')+'" data-block="'+b.id+'">'+escapeHtml((b.time?b.time+' ':'')+(b._st==='pendiente'?'⏳ Solicitud':'🔒 Asignado'))+'</button>';
+        return '<button type="button" class="month-chip block'+(b._st==='pendiente'?' pending':'')+'" data-block="'+b.id+'">'+escapeHtml((b.time?b.time+' ':'')+(b._st==='pendiente'?'⏳ Solicitud':'🔒 Asignado')+(b.amount>0?' '+formatCLP(b.amount):''))+'</button>';
       }));
       var chipsHtml = chipList.slice(0,3).join('');
       var more = chipList.length>3 ? '<span class="month-more">+'+(chipList.length-3)+' más</span>' : '';
