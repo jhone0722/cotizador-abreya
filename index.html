@@ -672,6 +672,27 @@
   #agendaRoot .wchip.pendiente{ border-left-color:var(--amber); }
   #agendaRoot .wchip.pagado{ border-left-color:var(--green); }
   #agendaRoot .wchip.is-done{ opacity:.6; }
+  /* Horarios apartados desde CerraVolt: solo indican que hay un servicio asignado, sin detalle */
+  #agendaRoot .block-card{
+    display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:12px; cursor:pointer; text-align:left; width:100%;
+    border:1px dashed var(--border); color:var(--ink-soft); font-family:inherit;
+    background:repeating-linear-gradient(45deg, transparent 0 8px, rgba(120,130,150,.10) 8px 16px);
+  }
+  #agendaRoot .block-card:hover{ border-color:var(--accent); }
+  #agendaRoot .block-card .bt{ font-family:var(--font-mono); font-weight:700; font-size:14px; color:var(--ink); min-width:56px; }
+  #agendaRoot .block-card .bt small{ display:block; font-weight:500; font-size:11px; color:var(--ink-faint); }
+  #agendaRoot .block-card .bb b{ display:block; color:var(--ink); font-size:14px; }
+  #agendaRoot .block-card .bb span{ font-size:12px; }
+  #agendaRoot .block-card.assigned{ border:1px solid #7c4dff; background:rgba(124,77,255,.09); }
+  #agendaRoot .block-card.pending{ border:1px dashed var(--amber); background:var(--amber-soft); }
+  #agendaRoot .wchip.block{ border-left-color:#7c4dff; background:rgba(124,77,255,.10); color:var(--ink); }
+  #agendaRoot .wchip.block.pending{ border-left-color:var(--amber); background:var(--amber-soft); border-style:dashed; }
+  #agendaRoot .month-chip.block{ background:rgba(124,77,255,.16); color:#6a3de8; border-left-color:#7c4dff; }
+  #agendaRoot .month-chip.block.pending{ background:var(--amber-soft); color:var(--amber-ink); border-left-color:var(--amber); }
+  #agendaRoot .chip.request{ cursor:pointer; background:var(--amber-soft); color:var(--amber-ink); border:1px solid var(--amber); font-weight:700; }
+  #agendaRoot .req-item{ border:1px solid var(--border); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; }
+  #agendaRoot .req-item .req-warn{ font-size:12.5px; color:var(--amber-ink); background:var(--amber-soft); border-radius:8px; padding:6px 8px; }
+
   #agendaRoot .wchip.is-done .wchip-name{ text-decoration:line-through; }
   #agendaRoot .wchip-time{ font-weight:700; font-family:var(--font-mono); }
   #agendaRoot .wchip-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -3257,6 +3278,7 @@ Correo Avisos: abreya.chile@gmail.com`;
     technicians: new Map(),// id -> data
     purchases: new Map(),  // id -> compra o gasto general
     advances: new Map(),   // id -> adelanto a un técnico
+    blocks: new Map(),     // id -> horario apartado desde CerraVolt (sin detalle)
     techPayments: new Map(),// id -> pago registrado a un técnico (período + monto + método)
     selectedDate: isoFromDate(new Date()),
     calYear: new Date().getFullYear(),
@@ -3364,6 +3386,16 @@ Correo Avisos: abreya.chile@gmail.com`;
     }, function(err){
       console.error('advances snapshot error', err);
       showBanner('No se pudo sincronizar los adelantos (' + err.code + '). Revisa las reglas de Firestore.');
+    }));
+
+    unsubs.push(db.collection('blocks').orderBy('date').onSnapshot(function(snap){
+      var m = new Map();
+      snap.docs.forEach(function(d){ m.set(d.id, d.data()); });
+      state.blocks = m;
+      renderAll();
+    }, function(err){
+      console.error('blocks snapshot error', err);
+      showBanner('No se pudieron sincronizar los horarios asignados (' + err.code + '). Revisa las reglas de Firestore.');
     }));
 
     unsubs.push(db.collection('techPayments').orderBy('date').onSnapshot(function(snap){
@@ -3610,6 +3642,135 @@ Correo Avisos: abreya.chile@gmail.com`;
     return { iva: iva2, net: a - iva2, total: a };
   }
   function formatNet(n){ return (n<0?'-':'') + formatCLP(Math.abs(n)); }
+
+  function toMin(t){ var p = (t||'').split(':'); return (Number(p[0])||0) * 60 + (Number(p[1])||0); }
+  // Servicio propio que choca con el horario solicitado (se asume 1 hora por servicio)
+  function blockConflict(b){
+    var bs = toMin(b.time), be = bs + (Number(b.durationMin) || 60), hit = null;
+    state.services.forEach(function(v){
+      if(hit || v.date !== b.date || !v.time) return;
+      var ss = toMin(v.time);
+      if(ss < be && ss + 60 > bs) hit = v;
+    });
+    return hit;
+  }
+  // 'rechazado' / 'aceptado' lo decide AbreYa; sin respuesta: si choca con un servicio propio queda como solicitud pendiente
+  function blockState(b){
+    if(b.status === 'rechazado') return 'rechazado';
+    if(b.status === 'aceptado') return 'aceptado';
+    return blockConflict(b) ? 'pendiente' : 'aceptado';
+  }
+  function pendingRequests(){
+    var today = isoFromDate(new Date()), out = [];
+    state.blocks.forEach(function(v, id){ if(v.date >= today && blockState(v) === 'pendiente') out.push(Object.assign({ id: id }, v)); });
+    out.sort(function(a, b){ return (a.date + (a.time||'')).localeCompare(b.date + (b.time||'')); });
+    return out;
+  }
+  // Horarios apartados desde CerraVolt (solo con filtro "todos": no son servicios ni cuentan en cobros)
+  function blocksForDate(iso){
+    var out = [];
+    if(state.filter !== 'all') return out;
+    state.blocks.forEach(function(v, id){
+      if(v.date !== iso || blockState(v) === 'rechazado') return;
+      out.push(Object.assign({ id: id, _st: blockState(v) }, v));
+    });
+    out.sort(function(a, b){ return (a.time||'').localeCompare(b.time||''); });
+    return out;
+  }
+  function blockEndTime(b){
+    var p = (b.time||'').split(':');
+    if(p.length < 2 || !(Number(b.durationMin) > 0)) return '';
+    var t = Number(p[0]) * 60 + Number(p[1]) + Number(b.durationMin);
+    if(t >= 24 * 60) return '23:59';
+    return pad2(Math.floor(t / 60)) + ':' + pad2(t % 60);
+  }
+  function blockCardHtml(b){
+    var end = blockEndTime(b), pend = b._st === 'pendiente';
+    return '<button type="button" class="block-card '+(pend?'pending':'assigned')+'" data-block="'+b.id+'">' +
+      '<div class="bt">'+escapeHtml(b.time||'--:--')+(end?'<small>hasta '+end+'</small>':'')+'</div>' +
+      '<div class="bb"><b>'+(pend?'⏳ Solicitud de servicio · por evaluar':'🔒 Servicio asignado')+'</b>' +
+        '<span>Desde '+escapeHtml(b.source||'CerraVolt')+(b.sharePct?' · ganancia acordada '+escapeHtml(b.sharePct)+'%':'')+(pend?' · choca con un servicio tuyo':'')+'</span></div>' +
+    '</button>';
+  }
+  async function respondBlock(id, status){
+    await state.db.collection('blocks').doc(id).update({ status: status, respondedAt: new Date().toISOString() });
+  }
+  function openBlockModal(id){
+    var b = state.blocks.get(id);
+    if(!b) return;
+    var d = dateFromISO(b.date), end = blockEndTime(b), st = blockState(b), pend = st === 'pendiente';
+    var conflict = pend ? blockConflict(b) : null;
+    openModal(
+      '<div class="modal-head"><h2>'+(pend?'Solicitud de servicio':'Servicio asignado')+'</h2><button class="icon-btn" id="m-close">✕</button></div>' +
+      '<div class="modal-body">' +
+        '<div class="field-hint" style="font-size:14px; color:var(--ink);">'+(pend?'⏳':'🔒')+' <b>'+WEEKDAYS[d.getDay()]+' '+d.getDate()+' de '+MONTHS[d.getMonth()]+'</b> · '+escapeHtml(b.time||'')+(end?' a '+end:'')+'</div>' +
+        (b.sharePct ? '<div class="field-hint">Ganancia acordada para AbreYa: <b>'+escapeHtml(b.sharePct)+'%</b> de la utilidad (monto − gastos).</div>' : '') +
+        (conflict ? '<div class="req-warn">⚠ Choca con tu servicio de las '+escapeHtml(conflict.time||'')+' ('+escapeHtml(conflict.clientName||'')+'). Evalúa si puedes tomarlo.</div>' : '') +
+        '<div class="field-hint">Solicitado desde '+escapeHtml(b.source||'CerraVolt')+'. Por privacidad no se muestra el detalle del servicio.</div>' +
+        '<div class="field-hint">💼 Los gastos de este servicio los registra solo '+escapeHtml(b.source||'CerraVolt')+'; aquí no se pueden agregar.</div>' +
+        '<div id="m-err" class="form-error"></div>' +
+        '<div class="modal-actions">' +
+          (pend ? '<button class="btn btn-danger" id="m-reject">Rechazar</button><button class="btn btn-primary" id="m-accept">Aceptar</button>'
+                : '<button class="btn btn-danger" id="m-reject">Liberar horario</button><button class="btn btn-ghost" id="m-cancel">Cerrar</button>') +
+        '</div>' +
+      '</div>');
+    document.getElementById('m-close').onclick = closeModal;
+    var cancel = document.getElementById('m-cancel'); if(cancel) cancel.onclick = closeModal;
+    var run = async function(status){
+      try{ await respondBlock(id, status); closeModal(); }
+      catch(err){ console.error(err); var e = document.getElementById('m-err'); e.textContent = 'No se pudo guardar la respuesta. Intenta de nuevo.'; e.classList.add('show'); }
+    };
+    document.getElementById('m-reject').onclick = function(){ run('rechazado'); };
+    var acc = document.getElementById('m-accept'); if(acc) acc.onclick = function(){ run('aceptado'); };
+  }
+
+  // Bandeja de solicitudes por evaluar
+  function openRequestsModal(){
+    var list = pendingRequests();
+    if(!list.length){ closeModal(); return; }
+    openModal(
+      '<div class="modal-head"><h2>🔔 Solicitudes de servicio</h2><button class="icon-btn" id="m-close">✕</button></div>' +
+      '<div class="modal-body" style="display:flex; flex-direction:column; gap:10px;">' +
+        '<div class="field-hint">CerraVolt te asignó servicios en horarios donde ya tienes algo agendado. Acepta o rechaza cada uno.</div>' +
+        list.map(function(b){
+          var d = dateFromISO(b.date), end = blockEndTime(b), c = blockConflict(b);
+          return '<div class="req-item">' +
+            '<div><b>'+WEEKDAYS[d.getDay()]+' '+d.getDate()+' de '+MONTHS[d.getMonth()]+'</b> · '+escapeHtml(b.time||'')+(end?' a '+end:'')+'</div>' +
+            (b.sharePct ? '<div class="field-hint">Ganancia acordada: <b>'+escapeHtml(b.sharePct)+'%</b> de la utilidad</div>' : '') +
+            (c ? '<div class="req-warn">⚠ Choca con tu servicio de las '+escapeHtml(c.time||'')+' ('+escapeHtml(c.clientName||'')+')</div>' : '') +
+            '<div style="display:flex; gap:8px;"><button class="btn btn-danger btn-sm" data-rej="'+b.id+'">Rechazar</button><button class="btn btn-primary btn-sm" data-acc="'+b.id+'">Aceptar</button></div>' +
+          '</div>';
+        }).join('') +
+        '<div id="m-err" class="form-error"></div>' +
+      '</div>');
+    document.getElementById('m-close').onclick = closeModal;
+    var answer = async function(id, status){
+      try{ await respondBlock(id, status); openRequestsModal(); }
+      catch(err){ console.error(err); var e = document.getElementById('m-err'); e.textContent = 'No se pudo guardar la respuesta. Intenta de nuevo.'; e.classList.add('show'); }
+    };
+    modal.querySelectorAll('[data-acc]').forEach(function(el){ el.onclick = function(){ answer(el.getAttribute('data-acc'), 'aceptado'); }; });
+    modal.querySelectorAll('[data-rej]').forEach(function(el){ el.onclick = function(){ answer(el.getAttribute('data-rej'), 'rechazado'); }; });
+  }
+  // Aviso al llegar una solicitud nueva: ventana con las solicitudes (y notificación del navegador si está permitida)
+  var seenRequests = new Set();
+  function checkNewRequests(){
+    if(!state.dbReady) return;
+    var fresh = pendingRequests().filter(function(b){ return !seenRequests.has(b.id); });
+    if(!fresh.length) return;
+    fresh.forEach(function(b){ seenRequests.add(b.id); });
+    try{
+      if(window.Notification && Notification.permission === 'granted'){
+        new Notification('Solicitud de servicio', { body: fresh.length + (fresh.length===1 ? ' solicitud nueva' : ' solicitudes nuevas') + ' desde CerraVolt para evaluar.' });
+      }
+    }catch(e){}
+    if(overlay && overlay.hidden) openRequestsModal();
+  }
+
+  function wireBlocks(root){
+    root.querySelectorAll('[data-block]').forEach(function(el){
+      el.addEventListener('click', function(e){ e.stopPropagation(); openBlockModal(el.getAttribute('data-block')); });
+    });
+  }
 
   function servicesForDate(iso){
     var out = [];
@@ -3883,21 +4044,34 @@ Correo Avisos: abreya.chile@gmail.com`;
     var chips = '<span class="chip"><span class="dot" style="background:var(--accent)"></span>' + items.length + (items.length===1?' cita':' citas') + '</span>';
     if(pending>0) chips += '<span class="chip amber"><span class="dot"></span>Por cobrar <span class="val">'+formatCLP(pending)+'</span></span>';
     if(paid>0) chips += '<span class="chip green"><span class="dot"></span>Cobrado <span class="val">'+formatCLP(paid)+'</span></span>';
+    var nBlocks = 0;
+    if(state.filter === 'all') state.blocks.forEach(function(v){ if(v.date >= rangeStart && v.date <= rangeEnd && blockState(v) === 'aceptado') nBlocks++; });
+    if(nBlocks > 0) chips += '<span class="chip"><span class="dot" style="background:var(--ink-faint)"></span>🔒 ' + nBlocks + (nBlocks===1?' asignado':' asignados') + '</span>';
+    var nReq = pendingRequests().length;
+    if(nReq > 0) chips = '<span class="chip request" id="btn-requests">🔔 ' + nReq + (nReq===1?' solicitud de servicio':' solicitudes de servicio') + '</span>' + chips;
     document.getElementById('day-chips').innerHTML = chips;
+    var reqBtn = document.getElementById('btn-requests');
+    if(reqBtn) reqBtn.onclick = openRequestsModal;
   }
 
   function renderDayView(){
     var list = document.getElementById('agenda-list');
     var items = servicesForDate(state.selectedDate);
-    if(items.length===0){
+    var blocks = blocksForDate(state.selectedDate);
+    if(items.length===0 && blocks.length===0){
       list.innerHTML = '<div class="empty-state"><div class="glyph">📅</div><div class="msg">'+(state.filter==='all' ? 'No hay servicios agendados este día.' : 'No hay servicios con este filtro este día.')+'</div>' +
         '<button class="btn btn-soft btn-sm" id="empty-new">+ Agendar servicio</button></div>';
       var btn = document.getElementById('empty-new');
       if(btn) btn.onclick = function(){ openAppointmentForm(null); };
       return;
     }
-    list.innerHTML = items.map(serviceCardHtml).join('');
+    // servicios y horarios asignados, ordenados por hora
+    var rows = items.map(function(s){ return { t: s.time||'', html: serviceCardHtml(s) }; })
+      .concat(blocks.map(function(b){ return { t: b.time||'', html: blockCardHtml(b) }; }))
+      .sort(function(a, b){ return a.t.localeCompare(b.t); });
+    list.innerHTML = rows.map(function(r){ return r.html; }).join('');
     wireServiceCards(list);
+    wireBlocks(list);
   }
 
   function renderWeekView(){
@@ -3909,15 +4083,18 @@ Correo Avisos: abreya.chile@gmail.com`;
       var d = new Date(start); d.setDate(d.getDate()+i);
       var iso = isoFromDate(d);
       var items = servicesForDate(iso);
+      var wblocks = blocksForDate(iso);
       html += '<div class="week-col">' +
         '<button type="button" class="week-col-head'+(iso===todayIso?' today':'')+'" data-iso="'+iso+'">' +
           '<div class="wd">'+WEEKDAYS[d.getDay()].slice(0,3)+'</div><div class="wn">'+d.getDate()+'</div>' +
         '</button>' +
         '<div class="week-col-body">' +
-        (items.length===0 ? '<div class="week-col-empty">—</div>' : items.map(function(s){
+        ((items.length===0 && wblocks.length===0) ? '<div class="week-col-empty">—</div>' : items.map(function(s){
           return '<button type="button" class="wchip'+(s.completed?' is-done':'')+' '+(s.paymentStatus==='pagado'?'pagado':'pendiente')+'" data-id="'+s.id+'">' +
             '<span class="wchip-time">'+escapeHtml(s.time||'')+'</span><span class="wchip-name">'+escapeHtml(s.clientName||'')+'</span>' +
           '</button>';
+        }).join('') + wblocks.map(function(b){
+          return '<button type="button" class="wchip block'+(b._st==='pendiente'?' pending':'')+'" data-block="'+b.id+'"><span class="wchip-time">'+escapeHtml(b.time||'')+'</span><span class="wchip-name">'+(b._st==='pendiente'?'⏳ Solicitud':'🔒 Asignado')+'</span></button>';
         }).join('')) +
         '</div>' +
       '</div>';
@@ -3926,9 +4103,10 @@ Correo Avisos: abreya.chile@gmail.com`;
     grid.querySelectorAll('.week-col-head').forEach(function(el){
       el.onclick = function(){ state.selectedDate = el.getAttribute('data-iso'); switchView('day'); };
     });
-    grid.querySelectorAll('.wchip').forEach(function(el){
+    grid.querySelectorAll('.wchip:not(.block)').forEach(function(el){
       el.onclick = function(){ openDetail(el.getAttribute('data-id')); };
     });
+    wireBlocks(grid);
   }
 
   function renderMonthView(){
@@ -3952,21 +4130,25 @@ Correo Avisos: abreya.chile@gmail.com`;
         return;
       }
       var items = servicesForDate(c.iso);
-      var cls = 'month-cell'+(c.iso===todayIso?' today':'')+(c.iso===state.selectedDate?' selected':'')+(items.length?' has-items':'');
-      var shown = items.slice(0,3);
-      var chipsHtml = shown.map(function(s){
+      var mblocks = blocksForDate(c.iso);
+      var cls = 'month-cell'+(c.iso===todayIso?' today':'')+(c.iso===state.selectedDate?' selected':'')+((items.length||mblocks.length)?' has-items':'');
+      var chipList = items.map(function(s){
         return '<button type="button" class="month-chip'+(s.completed?' is-done':'')+' '+(s.paymentStatus==='pagado'?'pagado':'pendiente')+'" data-id="'+s.id+'">'+escapeHtml((s.time?s.time+' ':'')+ (s.clientName||''))+'</button>';
-      }).join('');
-      var more = items.length>3 ? '<span class="month-more">+'+(items.length-3)+' más</span>' : '';
+      }).concat(mblocks.map(function(b){
+        return '<button type="button" class="month-chip block'+(b._st==='pendiente'?' pending':'')+'" data-block="'+b.id+'">'+escapeHtml((b.time?b.time+' ':'')+(b._st==='pendiente'?'⏳ Solicitud':'🔒 Asignado'))+'</button>';
+      }));
+      var chipsHtml = chipList.slice(0,3).join('');
+      var more = chipList.length>3 ? '<span class="month-more">+'+(chipList.length-3)+' más</span>' : '';
       html += '<button type="button" class="'+cls+'" data-iso="'+c.iso+'"><span class="mn">'+c.d+'</span>'+chipsHtml+more+'</button>';
     });
     grid.innerHTML = html;
     grid.querySelectorAll('.month-cell:not(.out)').forEach(function(el){
       el.addEventListener('click', function(){ state.selectedDate = el.getAttribute('data-iso'); switchView('day'); });
     });
-    grid.querySelectorAll('.month-chip').forEach(function(el){
+    grid.querySelectorAll('.month-chip:not(.block)').forEach(function(el){
       el.addEventListener('click', function(e){ e.stopPropagation(); openDetail(el.getAttribute('data-id')); });
     });
+    wireBlocks(grid);
   }
 
   function renderAgendaView(){
@@ -6077,6 +6259,7 @@ Correo Avisos: abreya.chile@gmail.com`;
 
   /* ---------------- render all ---------------- */
   function renderAll(){
+    checkNewRequests();
     renderMinical();
     renderSideSummary();
     renderAgendaView();
@@ -6110,7 +6293,7 @@ Correo Avisos: abreya.chile@gmail.com`;
   })();
 
   function resetState(){
-    state.services = new Map(); state.clients = new Map(); state.technicians = new Map(); state.purchases = new Map(); state.advances = new Map(); state.techPayments = new Map();
+    state.services = new Map(); state.clients = new Map(); state.technicians = new Map(); state.purchases = new Map(); state.advances = new Map(); state.blocks = new Map(); state.techPayments = new Map();
     state.activeClientId = null; state.activeTechId = null;
   }
   window.AYAgenda = {
