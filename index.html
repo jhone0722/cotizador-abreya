@@ -2016,7 +2016,7 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
     });
   }
   function cerravoltBlocks(uid){
-    return cerravoltFb().firestore().collection('users').doc(uid).collection('blocks');
+    return cerravoltFb().firestore().collection('buzon');   // buzón del socio: la cuenta de buzón solo puede escribir/leer aquí
   }
   function cerravoltWhen(a){
     const d = new Date(a.date + 'T12:00:00');
@@ -2056,7 +2056,7 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
   }
   function cerravoltErrorText(e){
     const c = (e && e.code) || '';
-    if(c === 'permission-denied') return 'CerraVolt no permite guardar aquí. En Firebase del proyecto cotizador-cerravolt, publica la regla: match /users/{userId}/{document=**} { allow read, write: if request.auth != null && request.auth.uid == userId; }';
+    if(c === 'permission-denied') return 'Falta configurar el buzón de CerraVolt: en Firebase del proyecto cotizador-cerravolt hay que publicar las reglas del buzón y usar la cuenta de buzón (no la cuenta principal).';
     if(c.startsWith('auth/') && /credential|password|user-not-found|invalid-email/.test(c)) return 'Correo o contraseña de CerraVolt incorrectos.';
     if(c === 'auth/too-many-requests') return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
     if(c === 'auth/network-request-failed' || c === 'unavailable') return 'Sin conexión. Revisa tu internet e intenta de nuevo.';
@@ -2087,8 +2087,8 @@ Correo Avisos: abreya.chile@gmail.com</textarea>
 
   function cerravoltLogin(msg){
     const el = abCard(
-      '<div class="pdf-title">Cuenta de CerraVolt</div>' +
-      '<div class="ab-note">Inicia sesión con la cuenta de CerraVolt para apartar horarios en su agenda. Quedará recordada en este dispositivo.</div>' +
+      '<div class="pdf-title">Buzón de CerraVolt</div>' +
+      '<div class="ab-note">Usa la cuenta de <b>buzón</b> que CerraVolt te entregó, no su cuenta principal. Con ella solo se pueden enviar y ver los horarios que tú apartas; no da acceso a sus servicios, clientes ni cotizaciones. Quedará recordada en este dispositivo.</div>' +
       '<div><label class="ab-label" for="abEmail">Correo</label><input class="ab-input" id="abEmail" type="email" autocomplete="username" autocapitalize="off"></div>' +
       '<div><label class="ab-label" for="abPass">Contraseña</label><input class="ab-input" id="abPass" type="password" autocomplete="current-password"></div>' +
       '<div class="ab-err" id="abErr">' + escapeHtml(msg || '') + '</div>' +
@@ -3644,14 +3644,14 @@ Correo Avisos: abreya.chile@gmail.com`;
       showBanner('No se pudo sincronizar los adelantos (' + err.code + '). Revisa las reglas de Firestore.');
     }));
 
-    unsubs.push(db.collection('blocks').orderBy('date').onSnapshot(function(snap){
+    unsubs.push(db.firestore.collection('buzon').orderBy('date').onSnapshot(function(snap){
       var m = new Map();
       snap.docs.forEach(function(d){ m.set(d.id, d.data()); });
       state.blocks = m;
       renderAll();
     }, function(err){
       console.error('blocks snapshot error', err);
-      showBanner('No se pudieron sincronizar los horarios asignados (' + err.code + '). Revisa las reglas de Firestore.');
+      showBanner('No se pudieron sincronizar los horarios asignados (' + err.code + '). Falta publicar las reglas del buzón en Firebase.');
     }));
 
     unsubs.push(db.collection('techPayments').orderBy('date').onSnapshot(function(snap){
@@ -3949,7 +3949,7 @@ Correo Avisos: abreya.chile@gmail.com`;
     '</button>';
   }
   async function respondBlock(id, status){
-    await state.db.collection('blocks').doc(id).update({ status: status, respondedAt: new Date().toISOString() });
+    await state.db.firestore.collection('buzon').doc(id).update({ status: status, respondedAt: new Date().toISOString() });
   }
   function openBlockModal(id){
     var b = state.blocks.get(id);
